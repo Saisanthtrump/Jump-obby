@@ -3,846 +3,1008 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🧱 OBBY BLOX — Parkour Challenge!</title>
+<title>🧱 OBBY BLOX</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;800&display=swap');
-  :root {
-    --sky1: #1a1a2e;
-    --sky2: #16213e;
-    --neon-pink: #ff2d78;
-    --neon-cyan: #00f5ff;
-    --neon-yellow: #ffe600;
-    --neon-green: #39ff14;
-    --neon-purple: #bf5fff;
-    --neon-orange: #ff6b35;
-    --player-color: #ff2d78;
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;800&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#0d0d1a;font-family:'Fredoka One',cursive;overflow:hidden;user-select:none;}
+ 
+  #ui{
+    position:fixed;top:0;left:0;right:0;z-index:100;
+    display:flex;justify-content:space-between;align-items:center;
+    padding:9px 18px;
+    background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);
+    border-bottom:2px solid #00f5ff;
   }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    background: var(--sky1);
-    font-family: 'Fredoka One', cursive;
-    overflow: hidden;
-    user-select: none;
+  #title{font-size:1.4rem;color:#00f5ff;text-shadow:0 0 12px #00f5ff,0 0 28px #00f5ff;letter-spacing:2px;}
+  #stats{display:flex;gap:16px;font-size:.9rem;font-family:'Nunito',sans-serif;font-weight:800;}
+  .stat{color:#fff;display:flex;align-items:center;gap:4px;}
+  .stat span{color:#ffe600;text-shadow:0 0 6px #ffe600;}
+  #hint{font-size:.68rem;color:rgba(255,255,255,.42);font-family:'Nunito',sans-serif;}
+ 
+  canvas{display:block;margin-top:50px;}
+ 
+  #overlay{
+    position:fixed;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    background:rgba(6,4,18,.95);z-index:200;gap:16px;
   }
-
-  #ui {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 100;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 20px;
-    background: rgba(0,0,0,0.5);
-    backdrop-filter: blur(8px);
-    border-bottom: 2px solid var(--neon-cyan);
+  #overlay h1{
+    font-size:3rem;color:#00f5ff;letter-spacing:4px;
+    text-shadow:0 0 18px #00f5ff,0 0 50px #00f5ff;
+    animation:pulse 1.6s ease-in-out infinite;
   }
-
-  #title {
-    font-size: 1.6rem;
-    color: var(--neon-cyan);
-    text-shadow: 0 0 12px var(--neon-cyan), 0 0 30px var(--neon-cyan);
-    letter-spacing: 2px;
+  #overlay p{
+    font-family:'Nunito',sans-serif;font-size:1rem;
+    color:rgba(255,255,255,.65);text-align:center;max-width:440px;line-height:1.7;
   }
-
-  #stats {
-    display: flex;
-    gap: 24px;
-    font-size: 1rem;
-    font-family: 'Nunito', sans-serif;
-    font-weight: 800;
+  .world-grid{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;}
+  .wcard{
+    background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.12);
+    border-radius:18px;padding:18px 22px;text-align:center;min-width:148px;
+    transition:transform .15s,box-shadow .15s;
   }
-
-  .stat {
-    color: white;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+  .wcard.unlocked{cursor:pointer;border-color:rgba(255,255,255,.28);}
+  .wcard.unlocked:hover{transform:translateY(-5px);}
+  .wcard.locked{opacity:.5;cursor:not-allowed;filter:grayscale(.5);}
+  .wcard .wicon{font-size:2.2rem;display:block;margin-bottom:5px;}
+  .wcard .wname{font-size:1.1rem;color:#fff;display:block;}
+  .wcard .wsub{font-family:'Nunito',sans-serif;font-size:.76rem;color:rgba(255,255,255,.45);display:block;margin-top:2px;}
+  .wcard .wreq{font-family:'Nunito',sans-serif;font-size:.8rem;color:#ffe600;margin-top:6px;display:block;}
+ 
+  .play-btn{
+    font-family:'Fredoka One',cursive;font-size:1.35rem;letter-spacing:2px;
+    padding:13px 42px;border:none;border-radius:50px;color:#fff;cursor:pointer;
+    background:linear-gradient(135deg,#ff2d78,#bf5fff);
+    box-shadow:0 0 24px #ff2d78aa;
+    animation:floatBtn 2s ease-in-out infinite;
+    transition:transform .12s;
   }
-
-  .stat span {
-    color: var(--neon-yellow);
-    text-shadow: 0 0 8px var(--neon-yellow);
-    font-size: 1.1rem;
+  .play-btn:hover{transform:scale(1.07);}
+  .play-btn.green{background:linear-gradient(135deg,#39ff14,#00c87a);color:#000;box-shadow:0 0 24px #39ff14aa;}
+  .play-btn.cyan{background:linear-gradient(135deg,#00f5ff,#bf5fff);color:#000;box-shadow:0 0 24px #00f5ffaa;}
+  .play-btn.gold{background:linear-gradient(135deg,#ffe600,#ff9900);color:#000;box-shadow:0 0 24px #ffe600aa;}
+ 
+  #pbar-wrap{position:fixed;bottom:0;left:0;right:0;height:7px;background:rgba(255,255,255,.08);z-index:100;}
+  #pbar{height:100%;width:0%;background:linear-gradient(90deg,#ff2d78,#00f5ff,#39ff14);
+    transition:width .3s;box-shadow:0 0 10px #00f5ff;}
+ 
+  .toast{
+    position:fixed;left:50%;transform:translateX(-50%) translateY(-14px);
+    border-radius:40px;z-index:300;opacity:0;pointer-events:none;
+    transition:opacity .3s,transform .3s;font-size:1.1rem;padding:9px 26px;
+    font-family:'Fredoka One',cursive;
   }
-
-  #controls-hint {
-    font-size: 0.75rem;
-    color: rgba(255,255,255,0.5);
-    font-family: 'Nunito', sans-serif;
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  #cp-toast{top:66px;background:linear-gradient(135deg,#39ff14,#00c87a);color:#000;box-shadow:0 0 16px #39ff14;}
+  #blk-toast{top:108px;background:linear-gradient(135deg,#ffe600,#ff9900);color:#000;box-shadow:0 0 16px #ffe600;}
+ 
+  @keyframes pulse{
+    0%,100%{text-shadow:0 0 18px #00f5ff,0 0 50px #00f5ff;}
+    50%{text-shadow:0 0 36px #00f5ff,0 0 90px #00f5ff,0 0 140px #00f5ff;}
   }
-
-  canvas {
-    display: block;
-    margin-top: 54px;
-  }
-
-  #overlay {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: rgba(10,10,30,0.92);
-    z-index: 200;
-    gap: 20px;
-  }
-
-  #overlay h1 {
-    font-size: 3.5rem;
-    color: var(--neon-cyan);
-    text-shadow: 0 0 20px var(--neon-cyan), 0 0 60px var(--neon-cyan);
-    animation: pulse 1.5s ease-in-out infinite;
-    letter-spacing: 4px;
-  }
-
-  #overlay p {
-    font-family: 'Nunito', sans-serif;
-    font-size: 1.1rem;
-    color: rgba(255,255,255,0.7);
-    text-align: center;
-    max-width: 400px;
-    line-height: 1.7;
-  }
-
-  #startBtn {
-    font-family: 'Fredoka One', cursive;
-    font-size: 1.5rem;
-    letter-spacing: 2px;
-    padding: 14px 48px;
-    border: none;
-    border-radius: 50px;
-    background: linear-gradient(135deg, var(--neon-pink), var(--neon-purple));
-    color: white;
-    cursor: pointer;
-    box-shadow: 0 0 30px var(--neon-pink), 0 4px 20px rgba(0,0,0,0.4);
-    transition: transform 0.1s, box-shadow 0.1s;
-    animation: floatBtn 2s ease-in-out infinite;
-  }
-
-  #startBtn:hover {
-    transform: scale(1.08);
-    box-shadow: 0 0 50px var(--neon-pink), 0 4px 30px rgba(0,0,0,0.5);
-  }
-
-  #deathScreen { display: none; }
-  #winScreen { display: none; }
-
-  .emoji-big { font-size: 4rem; }
-
-  #progress-bar-wrap {
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    height: 8px;
-    background: rgba(255,255,255,0.1);
-    z-index: 100;
-  }
-
-  #progress-bar {
-    height: 100%;
-    background: linear-gradient(90deg, var(--neon-pink), var(--neon-cyan), var(--neon-green));
-    width: 0%;
-    transition: width 0.3s ease;
-    box-shadow: 0 0 12px var(--neon-cyan);
-  }
-
-  #checkpoint-toast {
-    position: fixed;
-    top: 80px;
-    left: 50%;
-    transform: translateX(-50%) translateY(-20px);
-    background: linear-gradient(135deg, var(--neon-green), #00c87a);
-    color: #000;
-    font-family: 'Fredoka One', cursive;
-    font-size: 1.3rem;
-    padding: 10px 30px;
-    border-radius: 40px;
-    z-index: 300;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s, transform 0.3s;
-    box-shadow: 0 0 20px var(--neon-green);
-  }
-
-  #checkpoint-toast.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-
-  @keyframes pulse {
-    0%, 100% { text-shadow: 0 0 20px var(--neon-cyan), 0 0 60px var(--neon-cyan); }
-    50% { text-shadow: 0 0 40px var(--neon-cyan), 0 0 100px var(--neon-cyan), 0 0 150px var(--neon-cyan); }
-  }
-
-  @keyframes floatBtn {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-8px); }
-  }
+  @keyframes floatBtn{0%,100%{transform:translateY(0);}50%{transform:translateY(-7px);}}
 </style>
 </head>
 <body>
-
-<!-- HUD -->
+ 
 <div id="ui">
   <div id="title">🧱 OBBY BLOX</div>
   <div id="stats">
-    <div class="stat">💀 Deaths: <span id="deaths">0</span></div>
-    <div class="stat">⏱ Time: <span id="timer">0.0s</span></div>
-    <div class="stat">🏁 Stage: <span id="stage">1</span>/10</div>
+    <div class="stat">🌍 <span id="hud-world">—</span></div>
+    <div class="stat">🧱 <span id="hud-blocks">0</span> blocks</div>
+    <div class="stat">💀 <span id="hud-deaths">0</span></div>
+    <div class="stat">⏱ <span id="hud-timer">0.0s</span></div>
+    <div class="stat">🏁 Stage <span id="hud-stage">1/5</span></div>
   </div>
-  <div id="controls-hint">← → Arrow Keys / WASD to move &nbsp;|&nbsp; SPACE / W / ↑ to jump</div>
+  <div id="hint">← → / WASD move &nbsp;|&nbsp; SPACE / ↑ / W jump (double jump!)</div>
 </div>
-
-<!-- Progress -->
-<div id="progress-bar-wrap"><div id="progress-bar"></div></div>
-
-<!-- Checkpoint toast -->
-<div id="checkpoint-toast">✅ Checkpoint Reached!</div>
-
-<!-- Canvas -->
+ 
+<div id="pbar-wrap"><div id="pbar"></div></div>
+<div class="toast" id="cp-toast">✅ Checkpoint!</div>
+<div class="toast" id="blk-toast">🧱 +1 Block Earned!</div>
 <canvas id="gameCanvas"></canvas>
-
-<!-- Start Screen -->
-<div id="overlay" id="startScreen">
-  <div class="emoji-big">🧱</div>
-  <h1>OBBY BLOX</h1>
-  <p>Navigate through 10 epic stages of rainbow platforms, moving traps, and pure chaos. Don't fall!</p>
-  <button id="startBtn" onclick="startGame()">▶ PLAY NOW</button>
-  <p style="font-size:0.85rem; color: rgba(255,255,255,0.4);">Arrow Keys / WASD + Space to jump</p>
-</div>
-
+ 
+<div id="overlay"><!-- filled by JS --></div>
+ 
 <script>
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight - 54;
-
-// ─── COLORS ───
-const PLATFORM_COLORS = [
-  '#ff2d78','#ff6b35','#ffe600','#39ff14',
-  '#00f5ff','#bf5fff','#ff9dce','#ff4444',
-  '#00ffaa','#ffaa00'
-];
-
-const STAGE_BG = [
-  ['#1a0533','#3d0a6b'],
-  ['#001f3f','#003366'],
-  ['#1a0000','#4d0000'],
-  ['#003300','#006600'],
-  ['#1a1a00','#4d4d00'],
-  ['#00001a','#000066'],
-  ['#1a0011','#660044'],
-  ['#001a1a','#006666'],
-  ['#100020','#330066'],
-  ['#000000','#111111'],
-];
-
-// ─── GAME STATE ───
-let gameRunning = false;
-let deaths = 0;
-let startTime = 0;
-let lastTime = 0;
-let checkpoint = null;
-let currentStage = 0;
-let cameraX = 0;
-
-const keys = {};
-window.addEventListener('keydown', e => { keys[e.code] = true; e.preventDefault(); });
-window.addEventListener('keyup', e => { keys[e.code] = false; });
-
-// ─── PLAYER ───
-const player = {
-  x: 80, y: 300, w: 32, h: 36,
-  vx: 0, vy: 0,
-  onGround: false,
-  jumpCount: 0,
-  color: '#ff2d78',
-  trail: [],
-  squish: 1,
+// ═══════════════════════════════════
+//  WORLD CONFIG
+// ═══════════════════════════════════
+const WORLDS = {
+  1:{
+    id:1, label:'World 1', icon:'🌈', sub:'Neon Rainbow', unlockBlocks:0, uiBorder:'#00f5ff', stages:5,
+    platColors:['#ff2d78','#ff6b35','#ffe600','#39ff14','#00f5ff','#bf5fff','#ff9dce','#ff4444','#00ffaa','#ffaa00'],
+    bgTop:['#1a0533','#001f3f','#1a0000','#003300','#1a1a00','#00001a','#1a0011','#001a1a','#100020','#000000'],
+    bgBot:['#3d0a6b','#003366','#4d0000','#006600','#4d4d00','#000066','#660044','#006666','#330066','#111111'],
+    startCol:'#39ff14', finCol:'#ffe600',
+    spikeT:'#ffdd00',spikeM:'#ff6600',spikeB:'#aa0000',spikeG:'#ff3300', env:'stars',
+  },
+  2:{
+    id:2, label:'Highlands', icon:'🏔', sub:'World 2', unlockBlocks:25, uiBorder:'#88c470', stages:8,
+    platColors:['#5b8a4a','#7db564','#4a7a38','#6aaa52','#3d6e30','#88c470','#527a42','#6b9e55','#456035','#79b660'],
+    bgTop:['#0e2a0e','#0d2b0d','#0f2c0f','#0b270b','#0d280d','#0e2a0e','#0c260c','#0e290e','#0b240b','#0d270d'],
+    bgBot:['#1e4a1a','#1d4820','#1f4a1f','#1a401a','#1c4418','#1e4a1a','#1b3e1b','#1d481d','#193c19','#1b4218'],
+    startCol:'#88c470', finCol:'#c8e6a0',
+    spikeT:'#ccff88',spikeM:'#88dd44',spikeB:'#336600',spikeG:'#66cc00', env:'clouds',
+  },
+  3:{
+    id:3, label:'Dungeon', icon:'❄️', sub:'World 3 — Ice World', unlockBlocks:75, uiBorder:'#a8e8ff', stages:10,
+    platColors:['#a8d8f0','#c0eeff','#88ccee','#b0e0ff','#70bce0','#d0f0ff','#90d4f4','#aaeeff','#60aad4','#e0f8ff'],
+    bgTop:['#010a14','#020c18','#010b16','#020d1a','#010912','#020b16','#010a15','#020e1c','#010812','#000810'],
+    bgBot:['#0a2a40','#0c3050','#0a2c44','#0d3255','#092838','#0b2e48','#0a2a42','#0e3458','#092638','#083045'],
+    startCol:'#a8e8ff', finCol:'#ffffff',
+    spikeT:'#e8f8ff',spikeM:'#60ccff',spikeB:'#0077aa',spikeG:'#88ddff', env:'ice',
+  }
 };
-
-// ─── GENERATE LEVEL ───
-function genLevel() {
-  const platforms = [];
-  const traps = [];
-  const checkpoints = [];
-
-  // Starting platform
-  platforms.push({ x: 20, y: 380, w: 180, h: 24, color: '#39ff14', type: 'normal' });
-
-  let x = 220, y = 360;
-
-  for (let s = 0; s < 10; s++) {
-    const stageX = x;
-    const color = PLATFORM_COLORS[s];
-
-    // Checkpoint at start of each stage (except first)
-    if (s > 0) {
-      checkpoints.push({ x: x - 20, y: y - 40, w: 20, h: 40, stage: s });
-    }
-
-    // Helper: add a row of spikes on top of a platform
-    function addSpikes(px, py, pw, count) {
-      const spacing = pw / count;
-      for (let k = 0; k < count; k++) {
-        traps.push({ x: px + k * spacing, y: py - 28, w: spacing, h: 28, type: 'spike' });
-      }
-    }
-
-    // Generate stage-specific patterns
-    if (s === 0) {
-      // Easy intro — no spikes, just learn the controls
-      for (let i = 0; i < 5; i++) {
-        platforms.push({ x, y, w: 110, h: 20, color, type: 'normal' });
-        x += 140; y += (Math.random() > 0.5 ? -30 : 30);
-        y = Math.max(100, Math.min(y, 500));
-      }
-    } else if (s === 1) {
-      // Gaps + spikes on every other platform
-      for (let i = 0; i < 6; i++) {
-        platforms.push({ x, y, w: 90, h: 20, color, type: 'normal' });
-        if (i % 2 === 0) addSpikes(x + 15, y, 55, 2);
-        x += 130; y += (Math.random() > 0.5 ? -40 : 20);
-        y = Math.max(100, Math.min(y, 500));
-      }
-    } else if (s === 2) {
-      // Moving + spikes on every platform
-      for (let i = 0; i < 5; i++) {
-        platforms.push({ x, y, w: 90, h: 20, color, type: 'moving',
-          ox: x, range: 80, speed: 0.03 + Math.random() * 0.02, phase: Math.random() * Math.PI * 2 });
-        addSpikes(x + 10, y, 65, 2);
-        x += 140; y += (Math.random() > 0.5 ? -50 : 30);
-        y = Math.max(100, Math.min(y, 500));
-      }
-    } else if (s === 3) {
-      // Narrow + bouncy + spikes on all non-bounce
-      for (let i = 0; i < 6; i++) {
-        const isBounce = i % 2 === 0;
-        platforms.push({ x, y, w: 70, h: 20, color, type: isBounce ? 'bounce' : 'normal' });
-        if (!isBounce) addSpikes(x + 10, y, 50, 2);
-        x += 115; y += (Math.random() > 0.5 ? -40 : 40);
-        y = Math.max(100, Math.min(y, 500));
-      }
-    } else if (s === 4) {
-      // Spike gauntlet — EVERY platform has spikes
-      for (let i = 0; i < 6; i++) {
-        platforms.push({ x, y, w: 100, h: 20, color, type: 'normal' });
-        addSpikes(x + 5, y, 90, 3);
-        x += 150; y += (Math.random() > 0.5 ? -50 : 20);
-        y = Math.max(100, Math.min(y, 500));
-      }
-    } else if (s === 5) {
-      // Fast movers + spikes on all
-      for (let i = 0; i < 6; i++) {
-        platforms.push({ x, y, w: 85, h: 20, color, type: 'moving',
-          ox: x, range: 100, speed: 0.06, phase: i * 0.8 });
-        addSpikes(x + 8, y, 70, 2);
-        x += 150; y += (Math.random() > 0.5 ? -60 : 30);
-        y = Math.max(80, Math.min(y, 480));
-      }
-    } else if (s === 6) {
-      // Tiny platforms — spikes cover most of surface
-      for (let i = 0; i < 7; i++) {
-        platforms.push({ x, y, w: 60, h: 20, color, type: 'normal' });
-        addSpikes(x + 5, y, 50, 2);
-        x += 110; y += (Math.random() > 0.5 ? -50 : 50);
-        y = Math.max(80, Math.min(y, 480));
-      }
-    } else if (s === 7) {
-      // Moving + dense spikes
-      for (let i = 0; i < 6; i++) {
-        platforms.push({ x, y, w: 85, h: 20, color, type: 'moving',
-          ox: x, range: 70, speed: 0.05, phase: i });
-        addSpikes(x + 5, y, 75, 3);
-        x += 140; y += (Math.random() > 0.5 ? -50 : 30);
-        y = Math.max(80, Math.min(y, 480));
-      }
-    } else if (s === 8) {
-      // Chaos mix — spikes everywhere
-      for (let i = 0; i < 7; i++) {
-        const type = ['moving','bounce','normal'][i % 3];
-        platforms.push({ x, y, w: 75, h: 20, color, type,
-          ox: x, range: 90, speed: 0.07, phase: i * 0.5 });
-        if (type !== 'bounce') addSpikes(x + 5, y, 65, 3);
-        x += 130; y += (Math.random() > 0.5 ? -60 : 40);
-        y = Math.max(80, Math.min(y, 480));
-      }
-    } else {
-      // Final boss — tiny moving platforms COVERED in spikes
-      for (let i = 0; i < 8; i++) {
-        platforms.push({ x, y, w: 60, h: 20, color: '#ff2d78', type: 'moving',
-          ox: x, range: 60 + i * 10, speed: 0.08, phase: i * 0.7 });
-        addSpikes(x + 5, y, 50, 2);
-        x += 120; y += (Math.random() > 0.5 ? -60 : 50);
-        y = Math.max(80, Math.min(y, 480));
-      }
-    }
-
-    x += 40;
-  }
-
-  // FINISH
-  platforms.push({ x, y, w: 200, h: 24, color: '#ffe600', type: 'finish' });
-  checkpoints.push({ x: x + 60, y: y - 60, w: 30, h: 60, stage: 10 }); // finish flag
-
-  return { platforms, traps, checkpoints, totalWidth: x + 300 };
-}
-
-let level = genLevel();
-
-// ─── SPAWN / DEATH ───
-function spawnPlayer(cx, cy) {
-  player.x = cx ?? 80;
-  player.y = cy ?? 320;
-  player.vx = 0;
-  player.vy = 0;
-  player.onGround = false;
-  player.jumpCount = 0;
-  player.trail = [];
-}
-
-function die() {
-  deaths++;
-  document.getElementById('deaths').textContent = deaths;
-  // Shake screen
-  canvas.style.transform = 'translate(-6px,0)';
-  setTimeout(() => canvas.style.transform = 'translate(6px,0)', 80);
-  setTimeout(() => canvas.style.transform = '', 160);
-
-  if (checkpoint) {
-    spawnPlayer(checkpoint.x + 10, checkpoint.y - 40);
-    currentStage = checkpoint.stage;
-  } else {
-    spawnPlayer();
-    currentStage = 0;
-  }
-}
-
-// ─── PARTICLES ───
-const particles = [];
-function spawnParticles(x, y, color, n = 8) {
-  for (let i = 0; i < n; i++) {
-    particles.push({
-      x, y,
-      vx: (Math.random() - 0.5) * 6,
-      vy: (Math.random() - 2) * 5,
-      r: 4 + Math.random() * 6,
-      life: 1,
-      color
-    });
-  }
-}
-
-// ─── MAIN LOOP ───
-let elapsed = 0;
-
-function update(dt) {
-  elapsed += dt;
-  document.getElementById('timer').textContent = elapsed.toFixed(1) + 's';
-
-  // Update moving platforms
-  for (const p of level.platforms) {
-    if (p.type === 'moving') {
-      p.x = p.ox + Math.sin(elapsed * p.speed * 60 + p.phase) * p.range;
-    }
-  }
-
-  // Player input
-  const moveSpeed = 5;
-  const leftKey = keys['ArrowLeft'] || keys['KeyA'];
-  const rightKey = keys['ArrowRight'] || keys['KeyD'];
-  const jumpKey = keys['Space'] || keys['ArrowUp'] || keys['KeyW'];
-
-  if (leftKey) player.vx = -moveSpeed;
-  else if (rightKey) player.vx = moveSpeed;
-  else player.vx *= 0.75;
-
-  // Jump
-  if (jumpKey && !keys['_jumpHeld']) {
-    if (player.jumpCount < 2) {
-      player.vy = -14;
-      player.jumpCount++;
-      player.squish = 0.6;
-      spawnParticles(player.x + player.w / 2, player.y + player.h, '#00f5ff', 5);
-    }
-    keys['_jumpHeld'] = true;
-  }
-  if (!jumpKey) keys['_jumpHeld'] = false;
-
-  // Gravity
-  player.vy += 0.7;
-  if (player.vy > 20) player.vy = 20;
-
-  player.x += player.vx;
-  player.y += player.vy;
-  player.squish += (1 - player.squish) * 0.2;
-
-  // Platform collision
-  player.onGround = false;
-  for (const p of level.platforms) {
-    if (
-      player.x + player.w > p.x &&
-      player.x < p.x + p.w &&
-      player.y + player.h > p.y &&
-      player.y + player.h < p.y + p.h + player.vy + 2 &&
-      player.vy >= 0
-    ) {
-      player.y = p.y - player.h;
-      player.vy = p.type === 'bounce' ? -18 : 0;
-      if (p.type === 'bounce') spawnParticles(player.x + player.w/2, player.y + player.h, '#ff6b35', 6);
-      player.onGround = true;
-      player.jumpCount = 0;
-      player.squish = 1.3;
-
-      if (p.type === 'finish') {
-        winGame();
-        return;
-      }
-    }
-  }
-
-  // Trap collision
-  for (const t of level.traps) {
-    if (
-      player.x + player.w - 4 > t.x &&
-      player.x + 4 < t.x + t.w &&
-      player.y + player.h > t.y + 8 &&
-      player.y < t.y + t.h
-    ) {
-      spawnParticles(player.x + player.w/2, player.y + player.h/2, '#ff2d78', 12);
-      die();
-      return;
-    }
-  }
-
-  // Checkpoint collision
-  for (const cp of level.checkpoints) {
-    if (cp.stage < 10 &&
-      player.x + player.w > cp.x &&
-      player.x < cp.x + cp.w &&
-      player.y + player.h > cp.y &&
-      player.y < cp.y + cp.h
-    ) {
-      if (!checkpoint || checkpoint.stage < cp.stage) {
-        checkpoint = cp;
-        currentStage = cp.stage;
-        document.getElementById('stage').textContent = cp.stage + 1;
-        document.getElementById('progress-bar').style.width = ((cp.stage / 10) * 100) + '%';
-        showCheckpointToast();
-        spawnParticles(cp.x + cp.w/2, cp.y, '#39ff14', 15);
-      }
-    }
-  }
-
-  // Fall death
-  if (player.y > canvas.height + 100) {
-    spawnParticles(player.x + player.w/2, canvas.height, '#ff2d78', 10);
-    die();
-    return;
-  }
-
-  // Camera
-  const targetCamX = player.x - canvas.width / 3;
-  cameraX += (targetCamX - cameraX) * 0.1;
-
-  // Trail
-  player.trail.push({ x: player.x + player.w/2, y: player.y + player.h/2 });
-  if (player.trail.length > 10) player.trail.shift();
-
-  // Update particles
-  for (let i = particles.length - 1; i >= 0; i--) {
-    const p = particles[i];
-    p.x += p.vx;
-    p.y += p.vy;
-    p.vy += 0.3;
-    p.life -= 0.04;
-    if (p.life <= 0) particles.splice(i, 1);
-  }
-}
-
-// ─── DRAW ───
-function draw() {
-  const bg = STAGE_BG[Math.min(currentStage, 9)];
-
-  // Sky gradient
-  const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  grad.addColorStop(0, bg[0]);
-  grad.addColorStop(1, bg[1]);
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // Stars
-  ctx.save();
-  for (let i = 0; i < 80; i++) {
-    const sx = (i * 137 + 50) % canvas.width;
-    const sy = (i * 97 + 30) % (canvas.height * 0.7);
-    const blink = 0.4 + 0.6 * Math.sin(elapsed * 2 + i);
-    ctx.globalAlpha = blink * 0.5;
-    ctx.fillStyle = 'white';
-    ctx.fillRect(sx, sy, 2, 2);
-  }
-  ctx.restore();
-
-  ctx.save();
-  ctx.translate(-cameraX, 0);
-
-  // Draw platforms
-  for (const p of level.platforms) {
-    const grd = ctx.createLinearGradient(p.x, p.y, p.x, p.y + p.h);
-    grd.addColorStop(0, p.color);
-    grd.addColorStop(1, shadeColor(p.color, -40));
-
-    // Glow
-    ctx.shadowColor = p.color;
-    ctx.shadowBlur = p.type === 'finish' ? 30 : 12;
-
-    // Main block
-    ctx.fillStyle = grd;
-    roundRect(ctx, p.x, p.y, p.w, p.h, 6);
-    ctx.fill();
-
-    // Top shine
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = 'rgba(255,255,255,0.25)';
-    roundRect(ctx, p.x + 4, p.y + 2, p.w - 8, 6, 4);
-    ctx.fill();
-
-    // Stud dots (Roblox style!)
-    ctx.fillStyle = 'rgba(255,255,255,0.3)';
-    const studCount = Math.floor(p.w / 30);
-    for (let i = 0; i < studCount; i++) {
-      const sx = p.x + 15 + i * 30;
-      ctx.beginPath();
-      ctx.arc(sx, p.y - 4, 5, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Bounce label
-    if (p.type === 'bounce') {
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 14px Fredoka One';
-      ctx.textAlign = 'center';
-      ctx.fillText('🔴', p.x + p.w/2, p.y + 16);
-    }
-
-    // Finish
-    if (p.type === 'finish') {
-      ctx.fillStyle = '#000';
-      ctx.font = 'bold 18px Fredoka One';
-      ctx.textAlign = 'center';
-      ctx.fillText('🏁 FINISH!', p.x + p.w/2, p.y + 16);
-    }
-  }
-
-  // Draw traps (spikes) — BIG, GLOWING, DEADLY
-  for (const t of level.traps) {
-    const cols = Math.max(1, Math.round(t.w / t.w)); // always 1 spike per trap cell
-    const sw = t.w;
-    const sx = t.x;
-    const sy = t.y;
-    const sh = t.h;
-
-    // Outer glow
-    ctx.shadowColor = '#ff2200';
-    ctx.shadowBlur = 20;
-
-    const spkGrad = ctx.createLinearGradient(sx, sy, sx, sy + sh);
-    spkGrad.addColorStop(0, '#ffdd00');
-    spkGrad.addColorStop(0.3, '#ff6600');
-    spkGrad.addColorStop(1, '#aa0000');
-    ctx.fillStyle = spkGrad;
-
-    ctx.beginPath();
-    ctx.moveTo(sx + 2, sy + sh);
-    ctx.lineTo(sx + sw / 2, sy);
-    ctx.lineTo(sx + sw - 2, sy + sh);
-    ctx.closePath();
-    ctx.fill();
-
-    // Bright shine
-    ctx.shadowBlur = 0;
-    ctx.strokeStyle = 'rgba(255,230,100,0.7)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(sx + sw / 2 - 2, sy + sh - 5);
-    ctx.lineTo(sx + sw / 2, sy + 5);
-    ctx.stroke();
-  }
-  ctx.shadowBlur = 0;
-
-  // Draw checkpoints (flags)
-  for (const cp of level.checkpoints) {
-    if (cp.stage >= 10) continue;
-    const reached = checkpoint && checkpoint.stage >= cp.stage;
-    ctx.fillStyle = reached ? '#39ff14' : 'rgba(255,255,255,0.3)';
-    ctx.shadowColor = reached ? '#39ff14' : 'transparent';
-    ctx.shadowBlur = reached ? 15 : 0;
-    // Pole
-    ctx.fillRect(cp.x + cp.w/2 - 2, cp.y, 4, cp.h);
-    // Flag
-    ctx.fillStyle = reached ? '#39ff14' : '#ffffff';
-    ctx.beginPath();
-    ctx.moveTo(cp.x + cp.w/2 + 2, cp.y + 4);
-    ctx.lineTo(cp.x + cp.w/2 + 22, cp.y + 14);
-    ctx.lineTo(cp.x + cp.w/2 + 2, cp.y + 24);
-    ctx.closePath();
-    ctx.fill();
-    ctx.shadowBlur = 0;
-  }
-
-  // Trail
-  for (let i = 0; i < player.trail.length; i++) {
-    const t = player.trail[i];
-    const a = i / player.trail.length * 0.5;
-    ctx.globalAlpha = a;
-    ctx.fillStyle = '#ff2d78';
-    const r = (i / player.trail.length) * 10;
-    ctx.beginPath();
-    ctx.arc(t.x, t.y, r, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.globalAlpha = 1;
-
-  // Player (Roblox blocky)
-  const pw = player.w;
-  const ph = player.h * player.squish;
-  const py = player.y + player.h - ph;
-  const px = player.x;
-
-  ctx.shadowColor = player.color;
-  ctx.shadowBlur = 20;
-
-  // Body
-  const bodyGrad = ctx.createLinearGradient(px, py, px + pw, py + ph);
-  bodyGrad.addColorStop(0, '#ff6fa3');
-  bodyGrad.addColorStop(1, '#cc1155');
-  ctx.fillStyle = bodyGrad;
-  roundRect(ctx, px, py + ph * 0.35, pw, ph * 0.65, 5);
-  ctx.fill();
-
-  // Head
-  ctx.fillStyle = '#ffd6a5';
-  roundRect(ctx, px + 4, py, pw - 8, ph * 0.45, 6);
-  ctx.fill();
-
-  // Eyes
-  ctx.fillStyle = '#111';
-  ctx.beginPath(); ctx.arc(px + 9, py + ph * 0.18, 3.5, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(px + pw - 9, py + ph * 0.18, 3.5, 0, Math.PI * 2); ctx.fill();
-
-  // Shine
-  ctx.fillStyle = 'rgba(255,255,255,0.4)';
-  ctx.fillRect(px + pw - 10, py + 3, 5, 3);
-
-  ctx.shadowBlur = 0;
-
-  // Particles
-  for (const p of particles) {
-    ctx.globalAlpha = p.life;
-    ctx.fillStyle = p.color;
-    ctx.shadowColor = p.color;
-    ctx.shadowBlur = 10;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.globalAlpha = 1;
-  ctx.shadowBlur = 0;
-
-  ctx.restore();
-}
-
-// ─── HELPERS ───
-function roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
-}
-
-function shadeColor(hex, amt) {
-  const n = parseInt(hex.replace('#',''), 16);
-  const r = Math.max(0, Math.min(255, (n >> 16) + amt));
-  const g = Math.max(0, Math.min(255, ((n >> 8) & 0xff) + amt));
-  const b = Math.max(0, Math.min(255, (n & 0xff) + amt));
-  return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('');
-}
-
-let toastTimeout;
-function showCheckpointToast() {
-  const t = document.getElementById('checkpoint-toast');
-  t.classList.add('show');
-  clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(() => t.classList.remove('show'), 2000);
-}
-
-function winGame() {
-  gameRunning = false;
-  const overlay = document.getElementById('overlay');
-  overlay.innerHTML = `
-    <div class="emoji-big">🏆</div>
-    <h1 style="color: var(--neon-yellow); text-shadow: 0 0 20px var(--neon-yellow), 0 0 60px var(--neon-yellow);">YOU WIN!</h1>
-    <p style="font-size:1.2rem; color: #fff;">
-      Deaths: <span style="color: var(--neon-pink)">${deaths}</span> &nbsp;|&nbsp;
-      Time: <span style="color: var(--neon-cyan)">${elapsed.toFixed(1)}s</span>
+ 
+// ═══════════════════════════════════
+//  CANVAS
+// ═══════════════════════════════════
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+canvas.width  = window.innerWidth;
+canvas.height = window.innerHeight - 50;
+ 
+// ═══════════════════════════════════
+//  STATE
+// ═══════════════════════════════════
+let gameRunning=false, deaths=0, elapsed=0, lastTime=0;
+let checkpoint=null, currentStage=0, currentWorld=1, cameraX=0;
+let level=null, totalBlocks=0, stageBlocks={};
+ 
+const keys={};
+window.addEventListener('keydown',e=>{keys[e.code]=true;e.preventDefault();});
+window.addEventListener('keyup',  e=>{keys[e.code]=false;});
+ 
+const player={x:80,y:300,w:32,h:36,vx:0,vy:0,onGround:false,jumpCount:0,trail:[],squish:1};
+const particles=[];
+ 
+// ═══════════════════════════════════
+//  MENU
+// ═══════════════════════════════════
+function showMenu() {
+  gameRunning=false;
+  const ov=document.getElementById('overlay');
+  const cards=[1,2,3].map(wid=>{
+    const W=WORLDS[wid];
+    const unlocked=totalBlocks>=W.unlockBlocks;
+    const reqText = wid===1 ? '✅ Unlocked'
+      : unlocked ? '✅ Unlocked'
+      : `🔒 Need ${W.unlockBlocks} 🧱 blocks`;
+    return `
+      <div class="wcard ${unlocked?'unlocked':'locked'}" ${unlocked?`onclick="startWorld(${wid})"`:''}>
+        <span class="wicon">${W.icon}</span>
+        <span class="wname">${W.label}</span>
+        <span class="wsub">${W.sub}</span>
+        <span class="wreq">${reqText}</span>
+      </div>`;
+  }).join('');
+ 
+  ov.innerHTML=`
+    <div style="font-size:3.5rem">🧱</div>
+    <h1>OBBY BLOX</h1>
+    <p>Reach checkpoints to earn 🧱 blocks.<br>
+       Collect <b style="color:#ffe600">25 blocks</b> to unlock 🏔 Highlands •
+       <b style="color:#ffe600">75 blocks</b> to unlock 🏚 Dungeon!</p>
+    <div class="world-grid">${cards}</div>
+    <p style="font-size:.76rem;color:rgba(255,255,255,.3);">
+      You have <b style="color:#ffe600">${totalBlocks}</b> 🧱 blocks total
     </p>
-    <p style="color: rgba(255,255,255,0.6)">Incredible obby skills! 🎉</p>
-    <button id="startBtn" onclick="restartGame()" style="background: linear-gradient(135deg, #ffe600, #ff6b35);">🔄 PLAY AGAIN</button>
+    <p style="font-size:.72rem;color:rgba(255,255,255,.25);">Arrow Keys / WASD • Space / ↑ / W to jump</p>
   `;
-  overlay.style.display = 'flex';
-  document.getElementById('progress-bar').style.width = '100%';
+  ov.style.display='flex';
 }
-
-function restartGame() {
-  level = genLevel();
-  deaths = 0;
-  elapsed = 0;
-  checkpoint = null;
-  currentStage = 0;
-  cameraX = 0;
-  document.getElementById('deaths').textContent = 0;
-  document.getElementById('stage').textContent = '1';
-  document.getElementById('progress-bar').style.width = '0%';
-  spawnPlayer();
-  const overlay = document.getElementById('overlay');
-  overlay.style.display = 'none';
-  gameRunning = true;
+ 
+// ═══════════════════════════════════
+//  LEVEL GENERATOR
+// ═══════════════════════════════════
+function genLevel(wid) {
+  const W=WORLDS[wid];
+  const platforms=[],traps=[],checkpoints=[];
+ 
+  // Spike helper — height capped so spikes never taller than their own width
+  function addSpikes(px,py,pw) {
+    const SW=40, count=Math.max(1,Math.floor(pw/SW)), aw=pw/count;
+    const sh=Math.min(aw, 52); // spike height never exceeds spike width
+    for(let k=0;k<count;k++) traps.push({x:px+k*aw,y:py-sh,w:aw,h:sh});
+  }
+ 
+  // Safe giant start pad
+  platforms.push({x:20,y:380,w:280,h:24,color:W.startCol,type:'normal'});
+  let x=320,y=360;
+ 
+  for(let s=0;s<W.stages;s++){
+    const col=W.platColors[s % W.platColors.length];
+    if(s>0) checkpoints.push({x:x-30,y:y-50,w:24,h:50,stage:s});
+ 
+    // RULES:
+    //  • i===0 → always spike-free safe landing
+    //  • type==='moving' → NEVER has spikes
+    //  • Only 'normal' platforms get spikes
+ 
+    if(s===0){
+      // Pure intro — zero spikes
+      for(let i=0;i<5;i++){
+        platforms.push({x,y,w:160,h:22,color:col,type:'normal'});
+        x+=210; y+=(i%2===0?-28:26); y=clamp(y,130,460);
+      }
+    }else if(s===1){
+      // Gaps: wider spiked platforms, big safe edges
+      for(let i=0;i<6;i++){
+        const pw=i===0?190:360;
+        platforms.push({x,y,w:pw,h:22,color:col,type:'normal'});
+        if(i>=2&&i%2===0) addSpikes(x+80,y,pw-160);
+        x+=pw+50; y+=(i%2===0?-34:28); y=clamp(y,120,460);
+      }
+    }else if(s===2){
+      // Moving platforms — NO spikes
+      for(let i=0;i<6;i++){
+        const pw=i===0?190:240;
+        platforms.push({x,y,w:pw,h:22,color:col,type:'moving',ox:x,range:70,speed:.024,phase:i*.9});
+        x+=pw+55; y+=(i%2===0?-42:34); y=clamp(y,110,450);
+      }
+    }else if(s===3){
+      // Bounce pads + spiked normal — very wide, spikes in middle
+      for(let i=0;i<7;i++){
+        const isBounce=i>0&&i%3===0;
+        const pw=i===0?190:(isBounce?150:380);
+        const type=i===0?'normal':(isBounce?'bounce':'normal');
+        platforms.push({x,y,w:pw,h:22,color:col,type});
+        if(i>0&&!isBounce) addSpikes(x+80,y,pw-160);
+        x+=pw+48; y+=(i%2===0?-38:38); y=clamp(y,105,450);
+      }
+    }else if(s===4){
+      // Spike gauntlet — very wide, spikes in middle, clear edges
+      for(let i=0;i<6;i++){
+        const pw=i===0?190:400;
+        platforms.push({x,y,w:pw,h:22,color:col,type:'normal'});
+        if(i>0) addSpikes(x+80,y,pw-160);
+        x+=pw+54; y+=(i%2===0?-48:30); y=clamp(y,100,445);
+      }
+    }else if(s===5){
+      // Moving alternating with wide spiked static
+      for(let i=0;i<8;i++){
+        const isMoving=i%2===1&&i>0;
+        const pw=i===0?190:(isMoving?220:380);
+        const type=isMoving?'moving':'normal';
+        platforms.push({x,y,w:pw,h:22,color:col,type,ox:x,range:90,speed:.047,phase:i*.7});
+        if(!isMoving&&i>0) addSpikes(x+80,y,pw-160);
+        x+=pw+55; y+=(i%2===0?-50:36); y=clamp(y,95,440);
+      }
+    }else if(s===6){
+      // Wide platforms with spike islands in centre
+      for(let i=0;i<7;i++){
+        const pw=i===0?180:380;
+        platforms.push({x,y,w:pw,h:22,color:col,type:'normal'});
+        if(i>0) addSpikes(x+100,y,pw-200);
+        x+=pw+44; y+=(i%2===0?-50:52); y=clamp(y,90,440);
+      }
+    }else if(s===7){
+      // Moving + wide spiked static mixed
+      for(let i=0;i<8;i++){
+        const isMoving=i%3===1&&i>0;
+        const pw=i===0?190:(isMoving?220:380);
+        const type=isMoving?'moving':'normal';
+        platforms.push({x,y,w:pw,h:22,color:col,type,ox:x,range:78,speed:.043,phase:i*.6});
+        if(!isMoving&&i>0) addSpikes(x+80,y,pw-160);
+        x+=pw+52; y+=(i%2===0?-54:42); y=clamp(y,88,438);
+      }
+    }else if(s===8){
+      // Chaos: normal=spiked and very wide
+      const types=['normal','moving','bounce','normal','normal','moving','bounce','normal'];
+      for(let i=0;i<8;i++){
+        const t=i===0?'normal':types[i];
+        const pw=i===0?190:(t==='moving'?220:(t==='bounce'?150:380));
+        platforms.push({x,y,w:pw,h:22,color:col,type:t,ox:x,range:86,speed:.057,phase:i*.5});
+        if(i>0&&t==='normal') addSpikes(x+80,y,pw-160);
+        x+=pw+52; y+=(i%2===0?-58:44); y=clamp(y,85,435);
+      }
+    }else{
+      // FINAL stage — wide spiked static alternating with moving
+      for(let i=0;i<10;i++){
+        const isMoving=i%2===1&&i>0;
+        const pw=i===0?190:(isMoving?210:360);
+        const type=isMoving?'moving':'normal';
+        platforms.push({x,y,w:pw,h:22,color:'#ff2d78',type,
+          ox:x,range:52+i*8,speed:.068+i*.004,phase:i*.65});
+        if(!isMoving&&i>0) addSpikes(x+80,y,pw-160);
+        x+=pw+48; y+=(i%2===0?-56:50); y=clamp(y,84,432);
+      }
+    }
+    x+=24;
+  }
+ 
+  platforms.push({x,y,w:300,h:28,color:W.finCol,type:'finish'});
+  return {platforms,traps,checkpoints};
 }
-
-function startGame() {
+ 
+function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
+ 
+// ═══════════════════════════════════
+//  START WORLD
+// ═══════════════════════════════════
+function startWorld(wid){
+  boss=null; bossPhase='idle'; lasers=[]; bossDefeated=false;
+  currentWorld=wid;
+  const W=WORLDS[wid];
+  level=genLevel(wid);
+  deaths=0; elapsed=0; checkpoint=null; currentStage=0; cameraX=0; stageBlocks={};
+ 
+  document.getElementById('hud-world').textContent=W.label;
+  document.getElementById('hud-deaths').textContent=0;
+  document.getElementById('hud-stage').textContent=`1/${W.stages}`;
+  document.getElementById('hud-blocks').textContent=totalBlocks;
+  document.getElementById('pbar').style.width='0%';
+  document.getElementById('ui').style.borderBottomColor=W.uiBorder;
+  document.getElementById('overlay').style.display='none';
+ 
   spawnPlayer();
-  document.getElementById('overlay').style.display = 'none';
-  gameRunning = true;
-  startTime = performance.now();
-  lastTime = performance.now();
+  gameRunning=true;
+  lastTime=performance.now();
   requestAnimationFrame(loop);
 }
-
-function loop(ts) {
-  const dt = Math.min((ts - lastTime) / 1000, 0.05);
-  lastTime = ts;
-  if (gameRunning) {
-    update(dt);
-    draw();
-    requestAnimationFrame(loop);
+ 
+// ═══════════════════════════════════
+//  SPAWN / DIE
+// ═══════════════════════════════════
+function spawnPlayer(cx,cy){
+  player.x=cx??80; player.y=cy??320;
+  player.vx=0; player.vy=0; player.onGround=false; player.jumpCount=0; player.trail=[];
+}
+ 
+function die(){
+  deaths++;
+  document.getElementById('hud-deaths').textContent=deaths;
+  canvas.style.transform='translate(-5px,0)';
+  setTimeout(()=>canvas.style.transform='translate(5px,0)',70);
+  setTimeout(()=>canvas.style.transform='',140);
+  if(checkpoint){spawnPlayer(checkpoint.x+12,checkpoint.y-44);currentStage=checkpoint.stage;}
+  else{spawnPlayer();currentStage=0;}
+}
+ 
+// ═══════════════════════════════════
+//  PARTICLES
+// ═══════════════════════════════════
+function spawnParticles(x,y,color,n=8){
+  for(let i=0;i<n;i++) particles.push({
+    x,y,vx:(Math.random()-.5)*7,vy:(Math.random()-2.2)*5,
+    r:4+Math.random()*5,life:1,color
+  });
+}
+ 
+// ═══════════════════════════════════
+//  TOASTS
+// ═══════════════════════════════════
+const tTimers={};
+function showToast(id,dur=2200){
+  const el=document.getElementById(id);
+  el.classList.add('show');
+  clearTimeout(tTimers[id]);
+  tTimers[id]=setTimeout(()=>el.classList.remove('show'),dur);
+}
+ 
+// ═══════════════════════════════════
+//  WIN
+// ═══════════════════════════════════
+function winWorld(){
+  gameRunning=false;
+  if(!stageBlocks['finish']){stageBlocks['finish']=true;totalBlocks++;
+    document.getElementById('hud-blocks').textContent=totalBlocks;}
+ 
+  const W=WORLDS[currentWorld];
+  const next=WORLDS[currentWorld+1];
+  let nextMsg='';
+  if(next){
+    if(totalBlocks>=next.unlockBlocks)
+      nextMsg=`<p style="color:#39ff14;font-family:'Nunito',sans-serif;font-weight:800;">
+        ✅ ${next.icon} ${next.label} is now UNLOCKED! Go to World Select.</p>`;
+    else{
+      const need=next.unlockBlocks-totalBlocks;
+      nextMsg=`<p style="color:#ffe600;font-family:'Nunito',sans-serif;font-weight:800;">
+        🔒 Need <b>${need}</b> more 🧱 to unlock ${next.icon} ${next.label}!</p>`;
+    }
+  } else {
+    nextMsg=`<p style="color:#ffe600;font-family:'Nunito',sans-serif;font-weight:800;">
+      🏆 ALL 3 WORLDS COMPLETE! You're a legend!</p>`;
+  }
+ 
+  const ov=document.getElementById('overlay');
+  ov.innerHTML=`
+    <div style="font-size:3.5rem">${currentWorld===3?'🏆':'🌟'}</div>
+    <h1 style="color:#ffe600;text-shadow:0 0 18px #ffe600,0 0 50px #ffe600;">
+      ${currentWorld===3?'CHAMPION!':'WORLD CLEAR!'}
+    </h1>
+    <p style="color:#fff;font-size:1rem;">
+      ${W.icon} <b>${W.label}</b> complete!<br>
+      💀 <span style="color:#ff2d78">${deaths}</span> deaths &nbsp;·&nbsp;
+      ⏱ <span style="color:#00f5ff">${elapsed.toFixed(1)}s</span> &nbsp;·&nbsp;
+      🧱 <span style="color:#ffe600">${totalBlocks}</span> blocks total
+    </p>
+    ${nextMsg}
+    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:8px;">
+      <button class="play-btn gold" onclick="startWorld(${currentWorld})">🔄 Replay ${W.icon}</button>
+      <button class="play-btn cyan" onclick="showMenu()">🗺 World Select</button>
+    </div>
+  `;
+  ov.style.display='flex';
+  document.getElementById('pbar').style.width='100%';
+}
+ 
+// ═══════════════════════════════════
+//  UPDATE
+// ═══════════════════════════════════
+function update(dt){
+  elapsed+=dt;
+  document.getElementById('hud-timer').textContent=elapsed.toFixed(1)+'s';
+ 
+  for(const p of level.platforms)
+    if(p.type==='moving') p.x=p.ox+Math.sin(elapsed*p.speed*60+p.phase)*p.range;
+ 
+  const left=keys['ArrowLeft']||keys['KeyA'];
+  const right=keys['ArrowRight']||keys['KeyD'];
+  const jump=keys['Space']||keys['ArrowUp']||keys['KeyW'];
+ 
+  if(left) player.vx=-5.2;
+  else if(right) player.vx=5.2;
+  else player.vx*=0.74;
+ 
+  if(jump&&!keys['_jh']){
+    if(player.jumpCount<2){
+      player.vy=-14.5; player.jumpCount++;
+      player.squish=0.58;
+      spawnParticles(player.x+player.w/2,player.y+player.h,'#00f5ff',5);
+    }
+    keys['_jh']=true;
+  }
+  if(!jump) keys['_jh']=false;
+ 
+  player.vy=Math.min(player.vy+0.72,20);
+  player.x+=player.vx; player.y+=player.vy;
+  player.squish+=(1-player.squish)*0.2;
+ 
+  // Platform collision
+  player.onGround=false;
+  for(const p of level.platforms){
+    if(player.x+player.w>p.x&&player.x<p.x+p.w&&
+       player.y+player.h>p.y&&player.y+player.h<p.y+p.h+player.vy+2&&player.vy>=0){
+      player.y=p.y-player.h;
+      if(p.type==='bounce'){player.vy=-19;spawnParticles(player.x+player.w/2,player.y+player.h,'#ff6b35',7);}
+      else player.vy=0;
+      player.onGround=true; player.jumpCount=0; player.squish=1.3;
+      if(p.type==='finish'){startBossFight();return;}
+    }
+  }
+ 
+  // Spike collision
+  for(const t of level.traps){
+    if(player.x+player.w-5>t.x&&player.x+5<t.x+t.w&&
+       player.y+player.h>t.y+10&&player.y<t.y+t.h){
+      spawnParticles(player.x+player.w/2,player.y+player.h/2,'#ff2d78',14);
+      die();return;
+    }
+  }
+ 
+  // Checkpoints — 1 block per unique stage
+  for(const cp of level.checkpoints){
+    if(player.x+player.w>cp.x&&player.x<cp.x+cp.w&&
+       player.y+player.h>cp.y&&player.y<cp.y+cp.h){
+      if(!checkpoint||checkpoint.stage<cp.stage){
+        checkpoint=cp; currentStage=cp.stage;
+        const W2=WORLDS[currentWorld];
+        document.getElementById('hud-stage').textContent=`${cp.stage+1}/${W2.stages}`;
+        document.getElementById('pbar').style.width=((cp.stage/W2.stages)*100)+'%';
+        showToast('cp-toast');
+        spawnParticles(cp.x+cp.w/2,cp.y,'#39ff14',14);
+        if(!stageBlocks[cp.stage]){
+          stageBlocks[cp.stage]=true; totalBlocks++;
+          document.getElementById('hud-blocks').textContent=totalBlocks;
+          setTimeout(()=>showToast('blk-toast'),700);
+        }
+      }
+    }
+  }
+ 
+  // Boss fight
+  updateBoss(dt);
+ 
+  if(player.y>canvas.height+120){
+    spawnParticles(player.x+player.w/2,canvas.height,'#ff2d78',10);
+    die();return;
+  }
+ 
+  cameraX+=(player.x-canvas.width/3-cameraX)*0.1;
+  player.trail.push({x:player.x+player.w/2,y:player.y+player.h/2});
+  if(player.trail.length>12) player.trail.shift();
+ 
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    p.x+=p.vx;p.y+=p.vy;p.vy+=0.28;p.life-=0.038;
+    if(p.life<=0) particles.splice(i,1);
   }
 }
-
-window.addEventListener('resize', () => {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight - 54;
+ 
+// ═══════════════════════════════════
+//  BOSS FIGHT
+// ═══════════════════════════════════
+const BOSS_COLORS={1:{body:'#cc2244',eye:'#ff0000',detail:'#881122'},2:{body:'#336622',eye:'#aaff44',detail:'#224411'},3:{body:'#224488',eye:'#44aaff',detail:'#112255'}};
+let boss=null, bossArena=null, bossPhase='idle', bossHits=0, bossMaxHits=3;
+let lasers=[], bossWarnTimer=0, bossLaserTimer=0, bossShakeTimer=0;
+let bossIntroTimer=0, bossDefeated=false;
+ 
+function startBossFight(){
+  // Lock player onto arena platform
+  const fin=level.platforms.find(p=>p.type==='finish');
+  bossArena={x:fin.x-100, y:fin.y, w:fin.w+200, floorY:fin.y};
+ 
+  const C=BOSS_COLORS[currentWorld];
+  boss={
+    x: fin.x + fin.w/2 - 60,
+    y: fin.y - 280,
+    w:120, h:200,
+    vx:1.8, vy:0,
+    hp:3, maxHp:3,
+    color:C.body, eyeColor:C.eye, detailColor:C.detail,
+    stomping:false, stompTimer:0,
+    armAngle:0, eyePulse:0,
+    warningBeam:null,
+    invincible:0,
+    deadTimer:0,
+  };
+  bossHits=0; bossDefeated=false;
+  lasers=[];
+  bossPhase='fight';
+  bossIntroTimer=2.5;
+  bossLaserTimer=3;
+  bossWarnTimer=0;
+ 
+  // Show boss intro toast
+  const toastEl=document.getElementById('cp-toast');
+  toastEl.textContent='⚠️ BOSS APPEARS!';
+  toastEl.style.background='linear-gradient(135deg,#ff2d78,#ff6b00)';
+  toastEl.style.color='#fff';
+  showToast('cp-toast',2500);
+  setTimeout(()=>{
+    toastEl.textContent='✅ Checkpoint!';
+    toastEl.style.background='linear-gradient(135deg,#39ff14,#00c87a)';
+    toastEl.style.color='#000';
+  },3000);
+}
+ 
+function updateBoss(dt){
+  if(!boss||bossPhase!=='fight') return;
+ 
+  boss.eyePulse+=dt*4;
+  boss.armAngle=Math.sin(elapsed*3)*0.3;
+  boss.invincible=Math.max(0,boss.invincible-dt);
+ 
+  const fin=level.platforms.find(p=>p.type==='finish');
+  const arenaLeft=fin.x-80, arenaRight=fin.x+fin.w+80;
+ 
+  // Boss intro — just shake and pose
+  if(bossIntroTimer>0){ bossIntroTimer-=dt; return; }
+ 
+  // Boss walking
+  boss.x+=boss.vx;
+  if(boss.x<arenaLeft){boss.x=arenaLeft;boss.vx=Math.abs(boss.vx);}
+  if(boss.x+boss.w>arenaRight){boss.x=arenaRight-boss.w;boss.vx=-Math.abs(boss.vx);}
+ 
+  // Boss gravity
+  boss.vy=Math.min(boss.vy+0.5,15);
+  boss.y+=boss.vy;
+  if(boss.y+boss.h>=fin.y){boss.y=fin.y-boss.h;boss.vy=0;}
+ 
+  // Laser warning → fire
+  bossLaserTimer-=dt;
+  if(bossLaserTimer<=0){
+    // Show warning beam first
+    boss.warningBeam={x:boss.x+boss.w/2, y:boss.y+boss.h*0.55, timer:0.9};
+    bossWarnTimer=0.9;
+    bossLaserTimer=3.5 - bossHits*0.5;
+  }
+  if(boss.warningBeam){
+    boss.warningBeam.timer-=dt;
+    if(boss.warningBeam.timer<=0){
+      // Fire actual laser
+      lasers.push({
+        x:boss.warningBeam.x-6, y:boss.warningBeam.y,
+        w:12, h:canvas.height,
+        life:0.5, maxLife:0.5
+      });
+      boss.warningBeam=null;
+    }
+  }
+ 
+  // Laser update
+  for(let i=lasers.length-1;i>=0;i--){
+    lasers[i].life-=dt;
+    if(lasers[i].life<=0) lasers.splice(i,1);
+  }
+ 
+  // Laser hit player
+  for(const l of lasers){
+    if(player.x+player.w>l.x&&player.x<l.x+l.w&&player.y+player.h>l.y&&player.y<l.y+l.h){
+      spawnParticles(player.x+player.w/2,player.y,'#ff2d78',12);
+      die(); return;
+    }
+  }
+ 
+  // Player stomps boss head (jump on top)
+  if(
+    boss.invincible<=0 &&
+    player.x+player.w>boss.x+10 && player.x<boss.x+boss.w-10 &&
+    player.y+player.h>boss.y && player.y+player.h<boss.y+40 &&
+    player.vy>0
+  ){
+    // Hit!
+    boss.hp--;
+    bossHits++;
+    boss.invincible=1.5;
+    boss.vx*=-1.4;
+    player.vy=-16;
+    spawnParticles(boss.x+boss.w/2,boss.y,'#ff6600',18);
+    bossShakeTimer=0.3;
+ 
+    // Update HP toast
+    const remaining=boss.hp;
+    const toastEl=document.getElementById('cp-toast');
+    toastEl.textContent= remaining>0 ? `💥 HIT! ${remaining} HP left!` : '💥 BOSS DEFEATED!';
+    toastEl.style.background='linear-gradient(135deg,#ff6600,#ffcc00)';
+    toastEl.style.color='#000';
+    showToast('cp-toast',1500);
+ 
+    if(boss.hp<=0){
+      bossDefeated=true;
+      bossPhase='dead';
+      boss.deadTimer=2.5;
+      for(let i=0;i<40;i++) spawnParticles(
+        boss.x+Math.random()*boss.w,
+        boss.y+Math.random()*boss.h,
+        ['#ff2d78','#ffe600','#00f5ff','#39ff14'][i%4], 3
+      );
+      setTimeout(winWorld, 2600);
+    }
+  }
+ 
+  // Boss touches player (body)
+  if(
+    player.x+player.w>boss.x+8 && player.x<boss.x+boss.w-8 &&
+    player.y+player.h>boss.y+40 && player.y<boss.y+boss.h
+  ){
+    spawnParticles(player.x+player.w/2,player.y+player.h/2,'#ff2d78',12);
+    die();
+  }
+}
+ 
+function drawBoss(){
+  if(!boss||bossPhase==='idle') return;
+  const C=boss;
+  const shake=bossShakeTimer>0?(Math.random()-0.5)*8:0;
+  bossShakeTimer=Math.max(0,bossShakeTimer-0.016);
+ 
+  const bx=C.x+shake, by=C.y;
+  const bw=C.w, bh=C.h;
+  const dead=bossPhase==='dead';
+  const deadAlpha=dead?Math.max(0,(C.deadTimer/2.5)):1;
+ 
+  ctx.save();
+  ctx.globalAlpha=deadAlpha;
+ 
+  // ── LEGS ──
+  const legOff=Math.sin(elapsed*8)*8;
+  ctx.fillStyle=shadeColor(C.color,-30);
+  // Left leg
+  roundRect(ctx,bx+14,by+bh-50,28,55,6); ctx.fill();
+  // Right leg
+  roundRect(ctx,bx+bw-42,by+bh-50+legOff,28,55,6); ctx.fill();
+ 
+  // ── BODY ──
+  const bodyGrd=ctx.createLinearGradient(bx,by,bx+bw,by+bh);
+  bodyGrd.addColorStop(0,C.color); bodyGrd.addColorStop(1,shadeColor(C.color,-50));
+  ctx.fillStyle=bodyGrd;
+  ctx.shadowColor=C.color; ctx.shadowBlur=20;
+  roundRect(ctx,bx+8,by+bh*0.38,bw-16,bh*0.52,10); ctx.fill();
+  ctx.shadowBlur=0;
+ 
+  // Body detail — chest panel
+  ctx.fillStyle=shadeColor(C.color,-70);
+  roundRect(ctx,bx+20,by+bh*0.44,bw-40,bh*0.24,6); ctx.fill();
+  // Chest lights
+  const lightColors=['#ff2d78','#ffe600','#00f5ff'];
+  for(let i=0;i<3;i++){
+    ctx.fillStyle=lightColors[i];
+    ctx.shadowColor=lightColors[i]; ctx.shadowBlur=10;
+    ctx.beginPath(); ctx.arc(bx+34+i*22,by+bh*0.56,5,0,Math.PI*2); ctx.fill();
+    ctx.shadowBlur=0;
+  }
+ 
+  // ── ARMS ──
+  ctx.fillStyle=shadeColor(C.color,-20);
+  // Left arm
+  ctx.save();
+  ctx.translate(bx+8,by+bh*0.42);
+  ctx.rotate(-C.armAngle-0.3);
+  roundRect(ctx,-10,0,20,60,6); ctx.fill();
+  // Left fist
+  ctx.fillStyle=C.color; roundRect(ctx,-14,56,28,24,5); ctx.fill();
+  ctx.restore();
+  // Right arm
+  ctx.save();
+  ctx.translate(bx+bw-8,by+bh*0.42);
+  ctx.rotate(C.armAngle+0.3);
+  roundRect(ctx,-10,0,20,60,6); ctx.fill();
+  ctx.fillStyle=C.color; roundRect(ctx,-14,56,28,24,5); ctx.fill();
+  ctx.restore();
+ 
+  // ── HEAD ──
+  const headGrd=ctx.createLinearGradient(bx,by,bx+bw,by+bh*0.4);
+  headGrd.addColorStop(0,C.color); headGrd.addColorStop(1,shadeColor(C.color,-30));
+  ctx.fillStyle=headGrd;
+  ctx.shadowColor=C.color; ctx.shadowBlur=15;
+  roundRect(ctx,bx+6,by,bw-12,bh*0.42,12); ctx.fill();
+  ctx.shadowBlur=0;
+ 
+  // Antenna
+  ctx.strokeStyle=C.color; ctx.lineWidth=5;
+  ctx.beginPath(); ctx.moveTo(bx+bw/2,by); ctx.lineTo(bx+bw/2,by-28); ctx.stroke();
+  ctx.fillStyle=C.eyeColor; ctx.shadowColor=C.eyeColor; ctx.shadowBlur=16;
+  ctx.beginPath(); ctx.arc(bx+bw/2,by-32,8,0,Math.PI*2); ctx.fill();
+  ctx.shadowBlur=0;
+ 
+  // Eyes — single visor bar or angry eyes
+  if(!dead){
+    const eyePulseAlpha=0.7+0.3*Math.sin(C.eyePulse);
+    ctx.fillStyle=C.eyeColor; ctx.globalAlpha=deadAlpha*eyePulseAlpha;
+    ctx.shadowColor=C.eyeColor; ctx.shadowBlur=18;
+    // Angry eye slants
+    const ey=by+bh*0.14;
+    roundRect(ctx,bx+16,ey,26,14,4); ctx.fill();
+    roundRect(ctx,bx+bw-42,ey,26,14,4); ctx.fill();
+    // Pupils
+    ctx.fillStyle='#fff'; ctx.shadowBlur=0; ctx.globalAlpha=deadAlpha;
+    ctx.fillRect(bx+26,ey+3,8,8); ctx.fillRect(bx+bw-32,ey+3,8,8);
+  } else {
+    // Dead X eyes
+    ctx.strokeStyle='#fff'; ctx.lineWidth=4; ctx.globalAlpha=deadAlpha;
+    const ey=by+bh*0.14;
+    ctx.beginPath(); ctx.moveTo(bx+16,ey); ctx.lineTo(bx+42,ey+14); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(bx+42,ey); ctx.lineTo(bx+16,ey+14); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(bx+bw-42,ey); ctx.lineTo(bx+bw-16,ey+14); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(bx+bw-16,ey); ctx.lineTo(bx+bw-42,ey+14); ctx.stroke();
+  }
+ 
+  // Mouth — angry grill
+  ctx.globalAlpha=deadAlpha;
+  ctx.fillStyle=shadeColor(C.color,-80);
+  roundRect(ctx,bx+20,by+bh*0.3,bw-40,12,4); ctx.fill();
+  for(let i=0;i<5;i++){
+    ctx.fillStyle=C.eyeColor; ctx.globalAlpha=deadAlpha*0.6;
+    ctx.fillRect(bx+24+i*16,by+bh*0.3+2,8,8);
+  }
+  ctx.globalAlpha=deadAlpha;
+ 
+  // HP bar above boss
+  if(!dead){
+    const barW=bw+20, barH=12, barX=bx-10, barY=by-22;
+    ctx.fillStyle='rgba(0,0,0,0.6)'; roundRect(ctx,barX,barY,barW,barH,4); ctx.fill();
+    const hpFrac=Math.max(0,boss.hp/boss.maxHp);
+    const hpColor=hpFrac>0.6?'#39ff14':hpFrac>0.3?'#ffe600':'#ff2d78';
+    ctx.fillStyle=hpColor; ctx.shadowColor=hpColor; ctx.shadowBlur=8;
+    roundRect(ctx,barX+2,barY+2,(barW-4)*hpFrac,barH-4,3); ctx.fill();
+    ctx.shadowBlur=0;
+    ctx.fillStyle='#fff'; ctx.font='bold 10px Nunito'; ctx.textAlign='center';
+    ctx.fillText('BOSS HP',barX+barW/2,barY-4);
+  }
+ 
+  // Warning beam
+  if(boss.warningBeam){
+    const prog=1-(boss.warningBeam.timer/0.9);
+    ctx.globalAlpha=0.15+prog*0.3;
+    ctx.fillStyle='#ff4400';
+    ctx.fillRect(boss.warningBeam.x-8,boss.warningBeam.y,16,canvas.height);
+    // Warning flash
+    ctx.globalAlpha=0.5*Math.sin(elapsed*20);
+    ctx.fillStyle='#ffaa00';
+    ctx.fillRect(boss.warningBeam.x-3,boss.warningBeam.y,6,canvas.height);
+  }
+  ctx.globalAlpha=1;
+ 
+  // Active lasers
+  for(const l of lasers){
+    const lp=l.life/l.maxLife;
+    ctx.globalAlpha=lp;
+    ctx.fillStyle='#ff4400'; ctx.shadowColor='#ff6600'; ctx.shadowBlur=30;
+    ctx.fillRect(l.x,l.y,l.w,l.h);
+    ctx.fillStyle='#ffff88';
+    ctx.fillRect(l.x+3,l.y,l.w-6,l.h);
+    ctx.shadowBlur=0;
+  }
+  ctx.globalAlpha=1;
+ 
+  // Dead boss timer countdown
+  if(dead){ C.deadTimer-=0.016; }
+ 
+  ctx.restore();
+ 
+  // STOMP ON ME hint text
+  if(!dead && bossIntroTimer<=0){
+    ctx.save();
+    ctx.globalAlpha=0.5+0.5*Math.sin(elapsed*4);
+    ctx.fillStyle='#ffe600'; ctx.font='bold 14px Fredoka One';
+    ctx.textAlign='center';
+    ctx.fillText('⬆ JUMP ON ITS HEAD!', C.x+C.w/2, C.y-40);
+    ctx.restore();
+  }
+}
+ 
+// ═══════════════════════════════════
+//  DRAW
+// ═══════════════════════════════════
+function draw(){
+  const W=WORLDS[currentWorld];
+  const si=clamp(currentStage,0,9);
+ 
+  const grad=ctx.createLinearGradient(0,0,0,canvas.height);
+  grad.addColorStop(0,W.bgTop[si]); grad.addColorStop(1,W.bgBot[si]);
+  ctx.fillStyle=grad; ctx.fillRect(0,0,canvas.width,canvas.height);
+ 
+  ctx.save();
+  if(W.env==='stars'){
+    for(let i=0;i<90;i++){
+      const sx=(i*137+50)%canvas.width, sy=(i*97+30)%(canvas.height*.72);
+      ctx.globalAlpha=.28+.55*Math.sin(elapsed*2+i);
+      ctx.fillStyle='#fff'; ctx.fillRect(sx,sy,2,2);
+    }
+  }else if(W.env==='clouds'){
+    for(let i=0;i<8;i++){
+      const cx=((i*240+elapsed*16)%(canvas.width+280))-140, cy=40+i*60;
+      ctx.globalAlpha=.06; ctx.fillStyle='#cceebb';
+      ctx.beginPath(); ctx.ellipse(cx,cy,115,32,0,0,Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha=.055; ctx.fillStyle='#336622';
+    for(let i=0;i<5;i++){
+      const mx=(i*320+100-cameraX*.06)%(canvas.width+340)-170;
+      ctx.beginPath(); ctx.moveTo(mx,canvas.height);
+      ctx.lineTo(mx+160,canvas.height-185); ctx.lineTo(mx+320,canvas.height);
+      ctx.closePath(); ctx.fill();
+    }
+  }else if(W.env==='dungeon'){
+    for(let i=0;i<14;i++){
+      const ox=(i*173+80)%canvas.width, oy=(i*91+60)%(canvas.height*.85);
+      ctx.globalAlpha=.06+.05*Math.sin(elapsed*1.4+i);
+      ctx.fillStyle='#aa44ff';
+      ctx.beginPath(); ctx.arc(ox,oy,22,0,Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha=.035; ctx.strokeStyle='#665577'; ctx.lineWidth=1;
+    for(let i=0;i<14;i++){
+      const ly=i*(canvas.height/14);
+      ctx.beginPath(); ctx.moveTo(0,ly); ctx.lineTo(canvas.width,ly); ctx.stroke();
+    }
+  }
+  ctx.globalAlpha=1; ctx.restore();
+ 
+  ctx.save();
+  ctx.translate(-cameraX,0);
+ 
+  // Platforms
+  for(const p of level.platforms){
+    const grd=ctx.createLinearGradient(p.x,p.y,p.x,p.y+p.h);
+    grd.addColorStop(0,p.color); grd.addColorStop(1,shadeColor(p.color,-45));
+    ctx.shadowColor=p.color; ctx.shadowBlur=p.type==='finish'?28:10;
+    ctx.fillStyle=grd; roundRect(ctx,p.x,p.y,p.w,p.h,6); ctx.fill();
+    ctx.shadowBlur=0;
+    ctx.fillStyle='rgba(255,255,255,.2)'; roundRect(ctx,p.x+4,p.y+2,p.w-8,6,4); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.26)';
+    const studs=Math.floor(p.w/32);
+    for(let i=0;i<studs;i++){ctx.beginPath();ctx.arc(p.x+16+i*32,p.y-4,5,0,Math.PI*2);ctx.fill();}
+    if(p.type==='bounce'){ctx.font='13px sans-serif';ctx.textAlign='center';ctx.fillText('🟠',p.x+p.w/2,p.y+15);}
+    if(p.type==='finish'){ctx.fillStyle='#000';ctx.font='bold 16px Fredoka One';ctx.textAlign='center';ctx.fillText('🏁 FINISH!',p.x+p.w/2,p.y+18);}
+  }
+ 
+  // Spikes
+  for(const t of level.traps){
+    ctx.shadowColor=W.spikeG; ctx.shadowBlur=28;
+    const sg=ctx.createLinearGradient(t.x,t.y,t.x,t.y+t.h);
+    sg.addColorStop(0,W.spikeT); sg.addColorStop(.3,W.spikeM); sg.addColorStop(1,W.spikeB);
+    ctx.fillStyle=sg;
+    // Fat triangular spike
+    ctx.beginPath();
+    ctx.moveTo(t.x+4,       t.y+t.h);   // bottom-left
+    ctx.lineTo(t.x+t.w/2,   t.y);       // sharp tip
+    ctx.lineTo(t.x+t.w-4,   t.y+t.h);  // bottom-right
+    ctx.closePath(); ctx.fill();
+    // Inner bright shine line
+    ctx.shadowBlur=0;
+    ctx.strokeStyle='rgba(255,245,160,.75)'; ctx.lineWidth=2.5;
+    ctx.beginPath();
+    ctx.moveTo(t.x+t.w/2-2, t.y+t.h-10);
+    ctx.lineTo(t.x+t.w/2,   t.y+6);
+    ctx.stroke();
+    // Second subtle shine for depth
+    ctx.strokeStyle='rgba(255,255,255,.2)'; ctx.lineWidth=1.2;
+    ctx.beginPath();
+    ctx.moveTo(t.x+t.w*.35, t.y+t.h-8);
+    ctx.lineTo(t.x+t.w*.42, t.y+t.h*.35);
+    ctx.stroke();
+  }
+  ctx.shadowBlur=0;
+ 
+  // Flags
+  for(const cp of level.checkpoints){
+    const hit=checkpoint&&checkpoint.stage>=cp.stage;
+    ctx.shadowColor=hit?'#39ff14':'transparent'; ctx.shadowBlur=hit?14:0;
+    ctx.fillStyle=hit?'#39ff14':'rgba(255,255,255,.28)';
+    ctx.fillRect(cp.x+cp.w/2-2,cp.y,4,cp.h);
+    ctx.fillStyle=hit?'#39ff14':'#fff';
+    ctx.beginPath(); ctx.moveTo(cp.x+cp.w/2+2,cp.y+4); ctx.lineTo(cp.x+cp.w/2+22,cp.y+14); ctx.lineTo(cp.x+cp.w/2+2,cp.y+24); ctx.closePath(); ctx.fill();
+    ctx.shadowBlur=0;
+  }
+ 
+  // Boss
+  drawBoss();
+ 
+  // Trail
+  for(let i=0;i<player.trail.length;i++){
+    const t=player.trail[i];
+    ctx.globalAlpha=(i/player.trail.length)*.44;
+    ctx.fillStyle='#ff2d78';
+    ctx.beginPath(); ctx.arc(t.x,t.y,(i/player.trail.length)*10,0,Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha=1;
+ 
+  // Player
+  const pw=player.w,ph=player.h*player.squish,py=player.y+player.h-ph,px=player.x;
+  ctx.shadowColor='#ff2d78'; ctx.shadowBlur=18;
+  const bg=ctx.createLinearGradient(px,py,px+pw,py+ph);
+  bg.addColorStop(0,'#ff6fa3'); bg.addColorStop(1,'#cc1155');
+  ctx.fillStyle=bg; roundRect(ctx,px,py+ph*.35,pw,ph*.65,5); ctx.fill();
+  ctx.fillStyle='#ffd6a5'; roundRect(ctx,px+4,py,pw-8,ph*.45,6); ctx.fill();
+  ctx.fillStyle='#111';
+  ctx.beginPath(); ctx.arc(px+9,py+ph*.18,3.5,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(px+pw-9,py+ph*.18,3.5,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.4)'; ctx.fillRect(px+pw-10,py+3,5,3);
+  ctx.shadowBlur=0;
+ 
+  // Particles
+  for(const p of particles){
+    ctx.globalAlpha=p.life; ctx.fillStyle=p.color;
+    ctx.shadowColor=p.color; ctx.shadowBlur=10;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r*p.life,0,Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha=1; ctx.shadowBlur=0;
+  ctx.restore();
+}
+ 
+// ═══════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
+  ctx.quadraticCurveTo(x+w,y,x+w,y+r); ctx.lineTo(x+w,y+h-r);
+  ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h); ctx.lineTo(x+r,y+h);
+  ctx.quadraticCurveTo(x,y+h,x,y+h-r); ctx.lineTo(x,y+r);
+  ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+}
+function shadeColor(hex,amt){
+  const n=parseInt(hex.replace('#',''),16);
+  const r=clamp((n>>16)+amt,0,255), g=clamp(((n>>8)&0xff)+amt,0,255), b=clamp((n&0xff)+amt,0,255);
+  return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+ 
+// ═══════════════════════════════════
+//  LOOP
+// ═══════════════════════════════════
+function loop(ts){
+  const dt=Math.min((ts-lastTime)/1000,.05); lastTime=ts;
+  if(gameRunning){update(dt);draw();requestAnimationFrame(loop);}
+}
+ 
+window.addEventListener('resize',()=>{
+  canvas.width=window.innerWidth; canvas.height=window.innerHeight-50;
 });
+ 
+// Boot
+showMenu();
 </script>
 </body>
 </html>
