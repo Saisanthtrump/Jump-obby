@@ -8,7 +8,7 @@
   @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;800&display=swap');
   *{margin:0;padding:0;box-sizing:border-box;}
   body{background:#0d0d1a;font-family:'Fredoka One',cursive;overflow:hidden;user-select:none;}
- 
+
   #ui{
     position:fixed;top:0;left:0;right:0;z-index:100;
     display:flex;justify-content:space-between;align-items:center;
@@ -21,9 +21,9 @@
   .stat{color:#fff;display:flex;align-items:center;gap:4px;}
   .stat span{color:#ffe600;text-shadow:0 0 6px #ffe600;}
   #hint{font-size:.68rem;color:rgba(255,255,255,.42);font-family:'Nunito',sans-serif;}
- 
+
   canvas{display:block;margin-top:50px;}
- 
+
   #overlay{
     position:fixed;inset:0;display:flex;flex-direction:column;
     align-items:center;justify-content:center;
@@ -51,7 +51,7 @@
   .wcard .wname{font-size:1.1rem;color:#fff;display:block;}
   .wcard .wsub{font-family:'Nunito',sans-serif;font-size:.76rem;color:rgba(255,255,255,.45);display:block;margin-top:2px;}
   .wcard .wreq{font-family:'Nunito',sans-serif;font-size:.8rem;color:#ffe600;margin-top:6px;display:block;}
- 
+
   .play-btn{
     font-family:'Fredoka One',cursive;font-size:1.35rem;letter-spacing:2px;
     padding:13px 42px;border:none;border-radius:50px;color:#fff;cursor:pointer;
@@ -64,11 +64,11 @@
   .play-btn.green{background:linear-gradient(135deg,#39ff14,#00c87a);color:#000;box-shadow:0 0 24px #39ff14aa;}
   .play-btn.cyan{background:linear-gradient(135deg,#00f5ff,#bf5fff);color:#000;box-shadow:0 0 24px #00f5ffaa;}
   .play-btn.gold{background:linear-gradient(135deg,#ffe600,#ff9900);color:#000;box-shadow:0 0 24px #ffe600aa;}
- 
+
   #pbar-wrap{position:fixed;bottom:0;left:0;right:0;height:7px;background:rgba(255,255,255,.08);z-index:100;}
   #pbar{height:100%;width:0%;background:linear-gradient(90deg,#ff2d78,#00f5ff,#39ff14);
     transition:width .3s;box-shadow:0 0 10px #00f5ff;}
- 
+
   .toast{
     position:fixed;left:50%;transform:translateX(-50%) translateY(-14px);
     border-radius:40px;z-index:300;opacity:0;pointer-events:none;
@@ -78,7 +78,8 @@
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
   #cp-toast{top:66px;background:linear-gradient(135deg,#39ff14,#00c87a);color:#000;box-shadow:0 0 16px #39ff14;}
   #blk-toast{top:108px;background:linear-gradient(135deg,#ffe600,#ff9900);color:#000;box-shadow:0 0 16px #ffe600;}
- 
+  #coin-toast{top:150px;background:linear-gradient(135deg,#ffdd00,#ffaa00);color:#000;box-shadow:0 0 16px #ffdd00;}
+
   @keyframes pulse{
     0%,100%{text-shadow:0 0 18px #00f5ff,0 0 50px #00f5ff;}
     50%{text-shadow:0 0 36px #00f5ff,0 0 90px #00f5ff,0 0 140px #00f5ff;}
@@ -87,26 +88,35 @@
 </style>
 </head>
 <body>
- 
+
 <div id="ui">
   <div id="title">🧱 OBBY BLOX</div>
   <div id="stats">
     <div class="stat">🌍 <span id="hud-world">—</span></div>
     <div class="stat">🧱 <span id="hud-blocks">0</span> blocks</div>
+    <div class="stat">💰 <span id="hud-coins">0</span></div>
+    <div class="stat">🍎 <span id="hud-fruits">x0</span></div>
+    <div class="stat">⚡ <span id="hud-speed">1.0x</span></div>
     <div class="stat">💀 <span id="hud-deaths">0</span></div>
     <div class="stat">⏱ <span id="hud-timer">0.0s</span></div>
     <div class="stat">🏁 Stage <span id="hud-stage">1/5</span></div>
+    <button onclick="openShop()" style="font-family:'Fredoka One',cursive;font-size:.85rem;padding:5px 14px;border:none;border-radius:20px;background:linear-gradient(135deg,#ffe600,#ff9900);color:#000;cursor:pointer;box-shadow:0 0 10px #ffe600aa;">🛒 SHOP</button>
   </div>
   <div id="hint">← → / WASD move &nbsp;|&nbsp; SPACE / ↑ / W jump (double jump!)</div>
 </div>
- 
+
 <div id="pbar-wrap"><div id="pbar"></div></div>
 <div class="toast" id="cp-toast">✅ Checkpoint!</div>
 <div class="toast" id="blk-toast">🧱 +1 Block Earned!</div>
+<div class="toast" id="coin-toast">💰 Coins Earned!</div>
 <canvas id="gameCanvas"></canvas>
- 
 <div id="overlay"><!-- filled by JS --></div>
- 
+
+<!-- SHOP OVERLAY -->
+<div id="shop-overlay" style="display:none;position:fixed;inset:0;background:rgba(4,2,14,.96);z-index:500;
+  display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;">
+</div>
+
 <script>
 // ═══════════════════════════════════
 //  WORLD CONFIG
@@ -137,7 +147,7 @@ const WORLDS = {
     spikeT:'#e8f8ff',spikeM:'#60ccff',spikeB:'#0077aa',spikeG:'#88ddff', env:'ice',
   }
 };
- 
+
 // ═══════════════════════════════════
 //  CANVAS
 // ═══════════════════════════════════
@@ -145,24 +155,194 @@ const canvas = document.getElementById('gameCanvas');
 const ctx    = canvas.getContext('2d');
 canvas.width  = window.innerWidth;
 canvas.height = window.innerHeight - 50;
- 
+
 // ═══════════════════════════════════
 //  STATE
 // ═══════════════════════════════════
 let gameRunning=false, deaths=0, elapsed=0, lastTime=0;
 let checkpoint=null, currentStage=0, currentWorld=1, cameraX=0;
-let level=null, totalBlocks=0, stageBlocks={};
- 
+let level=null, totalBlocks=0, stageBlocks={}, totalCoins=0, playerLevel=1;
+
 const keys={};
 window.addEventListener('keydown',e=>{keys[e.code]=true;e.preventDefault();});
 window.addEventListener('keyup',  e=>{keys[e.code]=false;});
- 
-const player={x:80,y:300,w:32,h:36,vx:0,vy:0,onGround:false,jumpCount:0,trail:[],squish:1};
+
+const player={x:80,y:300,w:32,h:36,vx:0,vy:0,onGround:false,jumpCount:0,trail:[],squish:1,
+  speedMult:1, jumpMult:1, fruitCount:0, activeFruits:[]
+};
 const particles=[];
- 
+
 // ═══════════════════════════════════
-//  MENU
+//  FRUITS
 // ═══════════════════════════════════
+const FRUITS=[
+  {emoji:'🍎', name:'Apple',   color:'#ff2d2d', effect:'speed',  value:0.12, duration:8},
+  {emoji:'🍌', name:'Banana',  color:'#ffe600', effect:'jump',   value:0.15, duration:8},
+  {emoji:'🍊', name:'Orange',  color:'#ff9900', effect:'speed',  value:0.10, duration:10},
+  {emoji:'🍇', name:'Grapes',  color:'#bf5fff', effect:'both',   value:0.08, duration:7},
+  {emoji:'🍓', name:'Berry',   color:'#ff4488', effect:'speed',  value:0.14, duration:6},
+  {emoji:'🍉', name:'Melon',   color:'#39ff14', effect:'jump',   value:0.20, duration:5},
+  {emoji:'🥝', name:'Kiwi',    color:'#88cc44', effect:'both',   value:0.10, duration:9},
+  {emoji:'🍑', name:'Peach',   color:'#ffaa66', effect:'speed',  value:0.08, duration:12},
+  {emoji:'🍍', name:'Pineapple',color:'#ffdd00',effect:'jump',   value:0.18, duration:6},
+  {emoji:'🥭', name:'Mango',   color:'#ff8800', effect:'both',   value:0.15, duration:8},
+];
+let levelFruits=[]; // active fruit items in the level
+
+// ═══════════════════════════════════
+//  REDEEM CODES
+// ═══════════════════════════════════
+const REDEEM_CODES={
+  'OBBYBLOX':    { blocks:10, msg:'🎁 10 Blocks!' },
+  'FREEBLOCKS':  { blocks:15, msg:'🎁 15 Blocks!' },
+  'HIGHLANDS':   { blocks:25, msg:'🏔 25 Blocks! Highlands unlocked!' },
+  'DUNGEONKEY':  { blocks:50, msg:'❄️ 50 Blocks! Almost at Dungeon!' },
+  'SUPEROBBY':   { blocks:5,  msg:'⭐ 5 Bonus Blocks!' },
+  'NEWWORLD':    { blocks:30, msg:'🌍 30 Blocks!' },
+  'WELCOME':     { blocks:8,  msg:'👋 Welcome! 8 Blocks!' },
+};
+let usedCodes = JSON.parse(localStorage.getItem('obby_usedCodes')||'[]');
+
+function redeemCode() {
+  const input = document.getElementById('redeem-input');
+  const msg   = document.getElementById('redeem-msg');
+  const code  = input.value.trim().toUpperCase();
+
+  if (!code) { showRedeemMsg('⚠️ Enter a code!', '#ff9900'); return; }
+  if (usedCodes.includes(code)) { showRedeemMsg('❌ Already redeemed!', '#ff2d78'); return; }
+  if (!REDEEM_CODES[code])      { showRedeemMsg('❌ Invalid code!', '#ff2d78'); return; }
+
+  const reward = REDEEM_CODES[code];
+  usedCodes.push(code);
+  localStorage.setItem('obby_usedCodes', JSON.stringify(usedCodes));
+  totalBlocks += reward.blocks;
+  localStorage.setItem('obby_blocks', totalBlocks);
+  document.getElementById('hud-blocks').textContent = totalBlocks;
+  input.value = '';
+  showRedeemMsg('✅ ' + reward.msg, '#39ff14');
+  // Refresh menu cards
+  setTimeout(showMenu, 1200);
+}
+
+function showRedeemMsg(text, color) {
+  const msg = document.getElementById('redeem-msg');
+  if (!msg) return;
+  msg.textContent = text;
+  msg.style.color = color;
+  msg.style.opacity = '1';
+  setTimeout(()=>{ if(msg) msg.style.opacity='0'; }, 2000);
+}
+
+function showRedeemMsg(text, color) {
+  const msg = document.getElementById('redeem-msg');
+  if (!msg) return;
+  msg.textContent = text;
+  msg.style.color = color;
+  msg.style.opacity = '1';
+  setTimeout(()=>{ if(msg) msg.style.opacity='0'; }, 2000);
+}
+
+// ═══════════════════════════════════
+//  SHOP SYSTEM
+// ═══════════════════════════════════
+// Block shop items — price scales with player level
+function getShopItems() {
+  const lvl = playerLevel;
+  return [
+    { id:'blk5',   name:'5 Blocks',   icon:'🧱🧱🧱🧱🧱',  blocks:5,  coins: Math.round(10 * lvl),  desc:'Quick boost!' },
+    { id:'blk10',  name:'10 Blocks',  icon:'🧱×10',         blocks:10, coins: Math.round(18 * lvl),  desc:'Good value!' },
+    { id:'blk25',  name:'25 Blocks',  icon:'🧱×25',         blocks:25, coins: Math.round(40 * lvl),  desc:'Unlock Highlands!' },
+    { id:'blk50',  name:'50 Blocks',  icon:'🧱×50',         blocks:50, coins: Math.round(75 * lvl),  desc:'Halfway to Dungeon!' },
+    { id:'blk75',  name:'75 Blocks',  icon:'🧱×75',         blocks:75, coins: Math.round(110* lvl),  desc:'Unlock Ice World!' },
+    { id:'blk100', name:'100 Blocks', icon:'💎 100 Blocks', blocks:100,coins: Math.round(140* lvl),  desc:'Mega pack!' },
+  ];
+}
+
+function openShop() {
+  const shop = document.getElementById('shop-overlay');
+  renderShop();
+  shop.style.display='flex';
+  // Pause game while shopping
+  gameRunning=false;
+}
+
+function closeShop() {
+  document.getElementById('shop-overlay').style.display='none';
+  if(level) gameRunning=true;
+  else showMenu();
+}
+
+function renderShop() {
+  const shop = document.getElementById('shop-overlay');
+  const items = getShopItems();
+  const itemsHTML = items.map(item=>{
+    const canAfford = totalCoins >= item.coins;
+    return `
+      <div style="background:rgba(255,255,255,.07);border:2px solid ${canAfford?'rgba(255,230,0,.4)':'rgba(255,255,255,.1)'};
+        border-radius:16px;padding:14px 20px;text-align:center;min-width:140px;max-width:160px;
+        opacity:${canAfford?1:.5};">
+        <div style="font-size:1.4rem;margin-bottom:4px;">${item.icon}</div>
+        <div style="font-family:'Fredoka One',cursive;font-size:1rem;color:#fff;">${item.name}</div>
+        <div style="font-family:'Nunito',sans-serif;font-size:.75rem;color:rgba(255,255,255,.5);margin:3px 0;">${item.desc}</div>
+        <div style="font-family:'Fredoka One',cursive;font-size:1.1rem;color:#ffe600;margin:6px 0;">💰 ${item.coins} coins</div>
+        <button onclick="buyBlocks('${item.id}')"
+          style="font-family:'Fredoka One',cursive;font-size:.9rem;padding:7px 18px;border:none;
+          border-radius:20px;background:${canAfford?'linear-gradient(135deg,#ffe600,#ff9900)':'#444'};
+          color:${canAfford?'#000':'#888'};cursor:${canAfford?'pointer':'not-allowed'};">
+          ${canAfford?'BUY':'Too costly'}
+        </button>
+      </div>`;
+  }).join('');
+
+  shop.innerHTML=`
+    <div style="font-size:2.8rem">🛒</div>
+    <h1 style="font-size:2.4rem;color:#ffe600;text-shadow:0 0 16px #ffe600aa;letter-spacing:3px;">BLOCK SHOP</h1>
+    <p style="font-family:'Nunito',sans-serif;color:rgba(255,255,255,.6);font-size:.95rem;">
+      You have <b style="color:#ffe600">💰 ${totalCoins} coins</b> &nbsp;·&nbsp;
+      <b style="color:#00f5ff">🧱 ${totalBlocks} blocks</b> &nbsp;·&nbsp;
+      <b style="color:#bf5fff">Level ${playerLevel}</b>
+    </p>
+    <p style="font-family:'Nunito',sans-serif;color:rgba(255,150,0,.8);font-size:.82rem;">
+      ⚠️ Higher level = more expensive blocks! Earn coins by completing stages.
+    </p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:700px;">
+      ${itemsHTML}
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button onclick="closeShop()"
+        style="font-family:'Fredoka One',cursive;font-size:1rem;padding:10px 28px;border:none;
+        border-radius:30px;background:linear-gradient(135deg,#00f5ff,#bf5fff);color:#000;cursor:pointer;">
+        ← Back
+      </button>
+    </div>
+    <p style="font-family:'Nunito',sans-serif;font-size:.72rem;color:rgba(255,255,255,.25);">
+      Earn coins: complete stages (+5 coins) • reach checkpoints (+2 coins) • collect fruits (+1 coin)
+    </p>
+  `;
+}
+
+function buyBlocks(itemId) {
+  const item = getShopItems().find(i=>i.id===itemId);
+  if(!item || totalCoins < item.coins) return;
+  totalCoins -= item.coins;
+  totalBlocks += item.blocks;
+  playerLevel = Math.floor(totalBlocks / 20) + 1; // level up every 20 blocks
+  localStorage.setItem('obby_coins', totalCoins);
+  localStorage.setItem('obby_blocks', totalBlocks);
+  localStorage.setItem('obby_level', playerLevel);
+  document.getElementById('hud-coins').textContent = totalCoins;
+  document.getElementById('hud-blocks').textContent = totalBlocks;
+  renderShop(); // refresh shop with new prices
+}
+
+function earnCoins(amount, reason) {
+  totalCoins += amount;
+  localStorage.setItem('obby_coins', totalCoins);
+  document.getElementById('hud-coins').textContent = totalCoins;
+  const t = document.getElementById('coin-toast');
+  t.textContent = `💰 +${amount} coins! (${reason})`;
+  showToast('coin-toast', 1800);
+}
 function showMenu() {
   gameRunning=false;
   const ov=document.getElementById('overlay');
@@ -180,49 +360,68 @@ function showMenu() {
         <span class="wreq">${reqText}</span>
       </div>`;
   }).join('');
- 
+
   ov.innerHTML=`
     <div style="font-size:3.5rem">🧱</div>
     <h1>OBBY BLOX</h1>
     <p>Reach checkpoints to earn 🧱 blocks.<br>
        Collect <b style="color:#ffe600">25 blocks</b> to unlock 🏔 Highlands •
-       <b style="color:#ffe600">75 blocks</b> to unlock 🏚 Dungeon!</p>
+       <b style="color:#ffe600">75 blocks</b> to unlock ❄️ Ice World!</p>
     <div class="world-grid">${cards}</div>
     <p style="font-size:.76rem;color:rgba(255,255,255,.3);">
       You have <b style="color:#ffe600">${totalBlocks}</b> 🧱 blocks total
     </p>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:4px;">
+      <p style="font-size:.85rem;color:#ffe600;font-family:'Fredoka One',cursive;letter-spacing:1px;">🎁 REDEEM A CODE</p>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input id="redeem-input" type="text" placeholder="Enter code..."
+          style="font-family:'Fredoka One',cursive;font-size:1rem;padding:9px 16px;
+          border-radius:30px;border:2px solid #ffe600;background:rgba(255,255,255,.08);
+          color:#fff;outline:none;width:200px;text-align:center;letter-spacing:2px;"
+          onkeydown="if(event.key==='Enter')redeemCode()"
+        />
+        <button onclick="redeemCode()"
+          style="font-family:'Fredoka One',cursive;font-size:1rem;padding:9px 22px;
+          border:none;border-radius:30px;background:linear-gradient(135deg,#ffe600,#ff9900);
+          color:#000;cursor:pointer;box-shadow:0 0 14px #ffe600aa;">
+          REDEEM
+        </button>
+      </div>
+      <p id="redeem-msg" style="font-family:'Nunito',sans-serif;font-size:.9rem;
+        min-height:1.2em;transition:opacity .5s;opacity:0;font-weight:800;"></p>
+    </div>
     <p style="font-size:.72rem;color:rgba(255,255,255,.25);">Arrow Keys / WASD • Space / ↑ / W to jump</p>
   `;
   ov.style.display='flex';
 }
- 
+
 // ═══════════════════════════════════
 //  LEVEL GENERATOR
 // ═══════════════════════════════════
 function genLevel(wid) {
   const W=WORLDS[wid];
   const platforms=[],traps=[],checkpoints=[];
- 
+
   // Spike helper — height capped so spikes never taller than their own width
   function addSpikes(px,py,pw) {
     const SW=40, count=Math.max(1,Math.floor(pw/SW)), aw=pw/count;
     const sh=Math.min(aw, 52); // spike height never exceeds spike width
     for(let k=0;k<count;k++) traps.push({x:px+k*aw,y:py-sh,w:aw,h:sh});
   }
- 
+
   // Safe giant start pad
   platforms.push({x:20,y:380,w:280,h:24,color:W.startCol,type:'normal'});
   let x=320,y=360;
- 
+
   for(let s=0;s<W.stages;s++){
     const col=W.platColors[s % W.platColors.length];
     if(s>0) checkpoints.push({x:x-30,y:y-50,w:24,h:50,stage:s});
- 
+
     // RULES:
     //  • i===0 → always spike-free safe landing
     //  • type==='moving' → NEVER has spikes
     //  • Only 'normal' platforms get spikes
- 
+
     if(s===0){
       // Pure intro — zero spikes
       for(let i=0;i<5;i++){
@@ -314,13 +513,27 @@ function genLevel(wid) {
     }
     x+=24;
   }
- 
+
   platforms.push({x,y,w:300,h:28,color:W.finCol,type:'finish'});
+
+  // Spawn fruits on safe platforms (not first platform of stage, not spiked)
+  levelFruits=[];
+  for(const p of platforms){
+    if(p.type==='normal'&&p.w>=160&&Math.random()<0.35){
+      const f=FRUITS[Math.floor(Math.random()*FRUITS.length)];
+      levelFruits.push({
+        x: p.x+p.w/2-14, y: p.y-38,
+        w:28, h:28,
+        fruit:f, collected:false,
+        bob:Math.random()*Math.PI*2
+      });
+    }
+  }
   return {platforms,traps,checkpoints};
 }
- 
+
 function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
- 
+
 // ═══════════════════════════════════
 //  START WORLD
 // ═══════════════════════════════════
@@ -330,7 +543,8 @@ function startWorld(wid){
   const W=WORLDS[wid];
   level=genLevel(wid);
   deaths=0; elapsed=0; checkpoint=null; currentStage=0; cameraX=0; stageBlocks={};
- 
+  player.speedMult=1; player.jumpMult=1; player.fruitCount=0; player.activeFruits=[];
+
   document.getElementById('hud-world').textContent=W.label;
   document.getElementById('hud-deaths').textContent=0;
   document.getElementById('hud-stage').textContent=`1/${W.stages}`;
@@ -338,13 +552,13 @@ function startWorld(wid){
   document.getElementById('pbar').style.width='0%';
   document.getElementById('ui').style.borderBottomColor=W.uiBorder;
   document.getElementById('overlay').style.display='none';
- 
+
   spawnPlayer();
   gameRunning=true;
   lastTime=performance.now();
   requestAnimationFrame(loop);
 }
- 
+
 // ═══════════════════════════════════
 //  SPAWN / DIE
 // ═══════════════════════════════════
@@ -352,7 +566,7 @@ function spawnPlayer(cx,cy){
   player.x=cx??80; player.y=cy??320;
   player.vx=0; player.vy=0; player.onGround=false; player.jumpCount=0; player.trail=[];
 }
- 
+
 function die(){
   deaths++;
   document.getElementById('hud-deaths').textContent=deaths;
@@ -362,7 +576,7 @@ function die(){
   if(checkpoint){spawnPlayer(checkpoint.x+12,checkpoint.y-44);currentStage=checkpoint.stage;}
   else{spawnPlayer();currentStage=0;}
 }
- 
+
 // ═══════════════════════════════════
 //  PARTICLES
 // ═══════════════════════════════════
@@ -372,7 +586,7 @@ function spawnParticles(x,y,color,n=8){
     r:4+Math.random()*5,life:1,color
   });
 }
- 
+
 // ═══════════════════════════════════
 //  TOASTS
 // ═══════════════════════════════════
@@ -383,15 +597,18 @@ function showToast(id,dur=2200){
   clearTimeout(tTimers[id]);
   tTimers[id]=setTimeout(()=>el.classList.remove('show'),dur);
 }
- 
+
 // ═══════════════════════════════════
 //  WIN
 // ═══════════════════════════════════
 function winWorld(){
   gameRunning=false;
   if(!stageBlocks['finish']){stageBlocks['finish']=true;totalBlocks++;
-    document.getElementById('hud-blocks').textContent=totalBlocks;}
- 
+    playerLevel=Math.floor(totalBlocks/20)+1;
+    localStorage.setItem('obby_blocks',totalBlocks);
+    document.getElementById('hud-blocks').textContent=totalBlocks;
+    earnCoins(5*currentWorld, 'world complete!');
+
   const W=WORLDS[currentWorld];
   const next=WORLDS[currentWorld+1];
   let nextMsg='';
@@ -408,7 +625,7 @@ function winWorld(){
     nextMsg=`<p style="color:#ffe600;font-family:'Nunito',sans-serif;font-weight:800;">
       🏆 ALL 3 WORLDS COMPLETE! You're a legend!</p>`;
   }
- 
+
   const ov=document.getElementById('overlay');
   ov.innerHTML=`
     <div style="font-size:3.5rem">${currentWorld===3?'🏆':'🌟'}</div>
@@ -430,39 +647,41 @@ function winWorld(){
   ov.style.display='flex';
   document.getElementById('pbar').style.width='100%';
 }
- 
+
 // ═══════════════════════════════════
 //  UPDATE
 // ═══════════════════════════════════
 function update(dt){
   elapsed+=dt;
   document.getElementById('hud-timer').textContent=elapsed.toFixed(1)+'s';
- 
+  document.getElementById('hud-fruits').textContent='x'+player.fruitCount;
+  document.getElementById('hud-speed').textContent=player.speedMult.toFixed(1)+'x';
+
   for(const p of level.platforms)
     if(p.type==='moving') p.x=p.ox+Math.sin(elapsed*p.speed*60+p.phase)*p.range;
- 
+
   const left=keys['ArrowLeft']||keys['KeyA'];
   const right=keys['ArrowRight']||keys['KeyD'];
   const jump=keys['Space']||keys['ArrowUp']||keys['KeyW'];
- 
-  if(left) player.vx=-5.2;
-  else if(right) player.vx=5.2;
+
+  if(left) player.vx=-5.2*player.speedMult;
+  else if(right) player.vx=5.2*player.speedMult;
   else player.vx*=0.74;
- 
+
   if(jump&&!keys['_jh']){
     if(player.jumpCount<2){
-      player.vy=-14.5; player.jumpCount++;
+      player.vy=-14.5*player.jumpMult; player.jumpCount++;
       player.squish=0.58;
       spawnParticles(player.x+player.w/2,player.y+player.h,'#00f5ff',5);
     }
     keys['_jh']=true;
   }
   if(!jump) keys['_jh']=false;
- 
+
   player.vy=Math.min(player.vy+0.72,20);
   player.x+=player.vx; player.y+=player.vy;
   player.squish+=(1-player.squish)*0.2;
- 
+
   // Platform collision
   player.onGround=false;
   for(const p of level.platforms){
@@ -475,7 +694,49 @@ function update(dt){
       if(p.type==='finish'){startBossFight();return;}
     }
   }
- 
+
+  // Fruit collection
+  for(const f of levelFruits){
+    if(f.collected) continue;
+    if(player.x+player.w>f.x&&player.x<f.x+f.w&&
+       player.y+player.h>f.y&&player.y<f.y+f.h){
+      f.collected=true;
+      player.fruitCount++;
+      earnCoins(1,'fruit collected');
+      const fr=f.fruit;
+      // Apply effect — stacks with existing
+      if(fr.effect==='speed'||fr.effect==='both') player.speedMult=Math.min(player.speedMult+fr.value, 2.5);
+      if(fr.effect==='jump' ||fr.effect==='both') player.jumpMult =Math.min(player.jumpMult +fr.value, 2.5);
+      // Track active fruit with timer
+      player.activeFruits.push({...fr, timeLeft:fr.duration});
+      spawnParticles(f.x+f.w/2,f.y,fr.color,12);
+      // Toast
+      const toastEl=document.getElementById('cp-toast');
+      toastEl.textContent=`${fr.emoji} ${fr.name}! Speed x${player.speedMult.toFixed(1)}`;
+      toastEl.style.background=`linear-gradient(135deg,${fr.color},#ff9900)`;
+      toastEl.style.color='#000';
+      showToast('cp-toast',1800);
+      setTimeout(()=>{
+        toastEl.style.background='linear-gradient(135deg,#39ff14,#00c87a)';
+        toastEl.textContent='✅ Checkpoint!';
+      },2200);
+    }
+  }
+
+  // Decay fruit effects over time
+  for(let i=player.activeFruits.length-1;i>=0;i--){
+    player.activeFruits[i].timeLeft-=dt;
+    if(player.activeFruits[i].timeLeft<=0){
+      const expired=player.activeFruits.splice(i,1)[0];
+      // Recalculate multipliers from remaining active fruits
+      player.speedMult=1; player.jumpMult=1;
+      for(const af of player.activeFruits){
+        if(af.effect==='speed'||af.effect==='both') player.speedMult=Math.min(player.speedMult+af.value,2.5);
+        if(af.effect==='jump' ||af.effect==='both') player.jumpMult =Math.min(player.jumpMult +af.value,2.5);
+      }
+    }
+  }
+
   // Spike collision
   for(const t of level.traps){
     if(player.x+player.w-5>t.x&&player.x+5<t.x+t.w&&
@@ -484,7 +745,7 @@ function update(dt){
       die();return;
     }
   }
- 
+
   // Checkpoints — 1 block per unique stage
   for(const cp of level.checkpoints){
     if(player.x+player.w>cp.x&&player.x<cp.x+cp.w&&
@@ -492,38 +753,44 @@ function update(dt){
       if(!checkpoint||checkpoint.stage<cp.stage){
         checkpoint=cp; currentStage=cp.stage;
         const W2=WORLDS[currentWorld];
-        document.getElementById('hud-stage').textContent=`${cp.stage+1}/${W2.stages}`;
-        document.getElementById('pbar').style.width=((cp.stage/W2.stages)*100)+'%';
+        document.getElementById('hud-stage').textContent=`${cp.stage+1}/${WORLDS[currentWorld].stages}`;
+        document.getElementById('pbar').style.width=((cp.stage/WORLDS[currentWorld].stages)*100)+'%';
         showToast('cp-toast');
         spawnParticles(cp.x+cp.w/2,cp.y,'#39ff14',14);
         if(!stageBlocks[cp.stage]){
-          stageBlocks[cp.stage]=true; totalBlocks++;
+          stageBlocks[cp.stage]=true;
+          totalBlocks += 2;
+          playerLevel = Math.floor(totalBlocks/20)+1;
+          localStorage.setItem('obby_blocks', totalBlocks);
           document.getElementById('hud-blocks').textContent=totalBlocks;
+          const t=document.getElementById('blk-toast');
+          t.textContent='🧱 +2 Blocks! Stage Complete!';
           setTimeout(()=>showToast('blk-toast'),700);
+          setTimeout(()=>earnCoins(2,'checkpoint'),1200);
         }
       }
     }
   }
- 
+
   // Boss fight
   updateBoss(dt);
- 
+
   if(player.y>canvas.height+120){
     spawnParticles(player.x+player.w/2,canvas.height,'#ff2d78',10);
     die();return;
   }
- 
+
   cameraX+=(player.x-canvas.width/3-cameraX)*0.1;
   player.trail.push({x:player.x+player.w/2,y:player.y+player.h/2});
   if(player.trail.length>12) player.trail.shift();
- 
+
   for(let i=particles.length-1;i>=0;i--){
     const p=particles[i];
     p.x+=p.vx;p.y+=p.vy;p.vy+=0.28;p.life-=0.038;
     if(p.life<=0) particles.splice(i,1);
   }
 }
- 
+
 // ═══════════════════════════════════
 //  BOSS FIGHT
 // ═══════════════════════════════════
@@ -531,12 +798,12 @@ const BOSS_COLORS={1:{body:'#cc2244',eye:'#ff0000',detail:'#881122'},2:{body:'#3
 let boss=null, bossArena=null, bossPhase='idle', bossHits=0, bossMaxHits=3;
 let lasers=[], bossWarnTimer=0, bossLaserTimer=0, bossShakeTimer=0;
 let bossIntroTimer=0, bossDefeated=false;
- 
+
 function startBossFight(){
   // Lock player onto arena platform
   const fin=level.platforms.find(p=>p.type==='finish');
   bossArena={x:fin.x-100, y:fin.y, w:fin.w+200, floorY:fin.y};
- 
+
   const C=BOSS_COLORS[currentWorld];
   boss={
     x: fin.x + fin.w/2 - 60,
@@ -557,7 +824,7 @@ function startBossFight(){
   bossIntroTimer=2.5;
   bossLaserTimer=3;
   bossWarnTimer=0;
- 
+
   // Show boss intro toast
   const toastEl=document.getElementById('cp-toast');
   toastEl.textContent='⚠️ BOSS APPEARS!';
@@ -570,30 +837,30 @@ function startBossFight(){
     toastEl.style.color='#000';
   },3000);
 }
- 
+
 function updateBoss(dt){
   if(!boss||bossPhase!=='fight') return;
- 
+
   boss.eyePulse+=dt*4;
   boss.armAngle=Math.sin(elapsed*3)*0.3;
   boss.invincible=Math.max(0,boss.invincible-dt);
- 
+
   const fin=level.platforms.find(p=>p.type==='finish');
   const arenaLeft=fin.x-80, arenaRight=fin.x+fin.w+80;
- 
+
   // Boss intro — just shake and pose
   if(bossIntroTimer>0){ bossIntroTimer-=dt; return; }
- 
+
   // Boss walking
   boss.x+=boss.vx;
   if(boss.x<arenaLeft){boss.x=arenaLeft;boss.vx=Math.abs(boss.vx);}
   if(boss.x+boss.w>arenaRight){boss.x=arenaRight-boss.w;boss.vx=-Math.abs(boss.vx);}
- 
+
   // Boss gravity
   boss.vy=Math.min(boss.vy+0.5,15);
   boss.y+=boss.vy;
   if(boss.y+boss.h>=fin.y){boss.y=fin.y-boss.h;boss.vy=0;}
- 
+
   // Laser warning → fire
   bossLaserTimer-=dt;
   if(bossLaserTimer<=0){
@@ -614,13 +881,13 @@ function updateBoss(dt){
       boss.warningBeam=null;
     }
   }
- 
+
   // Laser update
   for(let i=lasers.length-1;i>=0;i--){
     lasers[i].life-=dt;
     if(lasers[i].life<=0) lasers.splice(i,1);
   }
- 
+
   // Laser hit player
   for(const l of lasers){
     if(player.x+player.w>l.x&&player.x<l.x+l.w&&player.y+player.h>l.y&&player.y<l.y+l.h){
@@ -628,7 +895,7 @@ function updateBoss(dt){
       die(); return;
     }
   }
- 
+
   // Player stomps boss head (jump on top)
   if(
     boss.invincible<=0 &&
@@ -644,7 +911,7 @@ function updateBoss(dt){
     player.vy=-16;
     spawnParticles(boss.x+boss.w/2,boss.y,'#ff6600',18);
     bossShakeTimer=0.3;
- 
+
     // Update HP toast
     const remaining=boss.hp;
     const toastEl=document.getElementById('cp-toast');
@@ -652,7 +919,7 @@ function updateBoss(dt){
     toastEl.style.background='linear-gradient(135deg,#ff6600,#ffcc00)';
     toastEl.style.color='#000';
     showToast('cp-toast',1500);
- 
+
     if(boss.hp<=0){
       bossDefeated=true;
       bossPhase='dead';
@@ -665,7 +932,7 @@ function updateBoss(dt){
       setTimeout(winWorld, 2600);
     }
   }
- 
+
   // Boss touches player (body)
   if(
     player.x+player.w>boss.x+8 && player.x<boss.x+boss.w-8 &&
@@ -675,21 +942,21 @@ function updateBoss(dt){
     die();
   }
 }
- 
+
 function drawBoss(){
   if(!boss||bossPhase==='idle') return;
   const C=boss;
   const shake=bossShakeTimer>0?(Math.random()-0.5)*8:0;
   bossShakeTimer=Math.max(0,bossShakeTimer-0.016);
- 
+
   const bx=C.x+shake, by=C.y;
   const bw=C.w, bh=C.h;
   const dead=bossPhase==='dead';
   const deadAlpha=dead?Math.max(0,(C.deadTimer/2.5)):1;
- 
+
   ctx.save();
   ctx.globalAlpha=deadAlpha;
- 
+
   // ── LEGS ──
   const legOff=Math.sin(elapsed*8)*8;
   ctx.fillStyle=shadeColor(C.color,-30);
@@ -697,7 +964,7 @@ function drawBoss(){
   roundRect(ctx,bx+14,by+bh-50,28,55,6); ctx.fill();
   // Right leg
   roundRect(ctx,bx+bw-42,by+bh-50+legOff,28,55,6); ctx.fill();
- 
+
   // ── BODY ──
   const bodyGrd=ctx.createLinearGradient(bx,by,bx+bw,by+bh);
   bodyGrd.addColorStop(0,C.color); bodyGrd.addColorStop(1,shadeColor(C.color,-50));
@@ -705,7 +972,7 @@ function drawBoss(){
   ctx.shadowColor=C.color; ctx.shadowBlur=20;
   roundRect(ctx,bx+8,by+bh*0.38,bw-16,bh*0.52,10); ctx.fill();
   ctx.shadowBlur=0;
- 
+
   // Body detail — chest panel
   ctx.fillStyle=shadeColor(C.color,-70);
   roundRect(ctx,bx+20,by+bh*0.44,bw-40,bh*0.24,6); ctx.fill();
@@ -717,7 +984,7 @@ function drawBoss(){
     ctx.beginPath(); ctx.arc(bx+34+i*22,by+bh*0.56,5,0,Math.PI*2); ctx.fill();
     ctx.shadowBlur=0;
   }
- 
+
   // ── ARMS ──
   ctx.fillStyle=shadeColor(C.color,-20);
   // Left arm
@@ -735,7 +1002,7 @@ function drawBoss(){
   roundRect(ctx,-10,0,20,60,6); ctx.fill();
   ctx.fillStyle=C.color; roundRect(ctx,-14,56,28,24,5); ctx.fill();
   ctx.restore();
- 
+
   // ── HEAD ──
   const headGrd=ctx.createLinearGradient(bx,by,bx+bw,by+bh*0.4);
   headGrd.addColorStop(0,C.color); headGrd.addColorStop(1,shadeColor(C.color,-30));
@@ -743,14 +1010,14 @@ function drawBoss(){
   ctx.shadowColor=C.color; ctx.shadowBlur=15;
   roundRect(ctx,bx+6,by,bw-12,bh*0.42,12); ctx.fill();
   ctx.shadowBlur=0;
- 
+
   // Antenna
   ctx.strokeStyle=C.color; ctx.lineWidth=5;
   ctx.beginPath(); ctx.moveTo(bx+bw/2,by); ctx.lineTo(bx+bw/2,by-28); ctx.stroke();
   ctx.fillStyle=C.eyeColor; ctx.shadowColor=C.eyeColor; ctx.shadowBlur=16;
   ctx.beginPath(); ctx.arc(bx+bw/2,by-32,8,0,Math.PI*2); ctx.fill();
   ctx.shadowBlur=0;
- 
+
   // Eyes — single visor bar or angry eyes
   if(!dead){
     const eyePulseAlpha=0.7+0.3*Math.sin(C.eyePulse);
@@ -772,7 +1039,7 @@ function drawBoss(){
     ctx.beginPath(); ctx.moveTo(bx+bw-42,ey); ctx.lineTo(bx+bw-16,ey+14); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(bx+bw-16,ey); ctx.lineTo(bx+bw-42,ey+14); ctx.stroke();
   }
- 
+
   // Mouth — angry grill
   ctx.globalAlpha=deadAlpha;
   ctx.fillStyle=shadeColor(C.color,-80);
@@ -782,7 +1049,7 @@ function drawBoss(){
     ctx.fillRect(bx+24+i*16,by+bh*0.3+2,8,8);
   }
   ctx.globalAlpha=deadAlpha;
- 
+
   // HP bar above boss
   if(!dead){
     const barW=bw+20, barH=12, barX=bx-10, barY=by-22;
@@ -795,7 +1062,7 @@ function drawBoss(){
     ctx.fillStyle='#fff'; ctx.font='bold 10px Nunito'; ctx.textAlign='center';
     ctx.fillText('BOSS HP',barX+barW/2,barY-4);
   }
- 
+
   // Warning beam
   if(boss.warningBeam){
     const prog=1-(boss.warningBeam.timer/0.9);
@@ -808,7 +1075,7 @@ function drawBoss(){
     ctx.fillRect(boss.warningBeam.x-3,boss.warningBeam.y,6,canvas.height);
   }
   ctx.globalAlpha=1;
- 
+
   // Active lasers
   for(const l of lasers){
     const lp=l.life/l.maxLife;
@@ -820,12 +1087,12 @@ function drawBoss(){
     ctx.shadowBlur=0;
   }
   ctx.globalAlpha=1;
- 
+
   // Dead boss timer countdown
   if(dead){ C.deadTimer-=0.016; }
- 
+
   ctx.restore();
- 
+
   // STOMP ON ME hint text
   if(!dead && bossIntroTimer<=0){
     ctx.save();
@@ -836,18 +1103,18 @@ function drawBoss(){
     ctx.restore();
   }
 }
- 
+
 // ═══════════════════════════════════
 //  DRAW
 // ═══════════════════════════════════
 function draw(){
   const W=WORLDS[currentWorld];
   const si=clamp(currentStage,0,9);
- 
+
   const grad=ctx.createLinearGradient(0,0,0,canvas.height);
   grad.addColorStop(0,W.bgTop[si]); grad.addColorStop(1,W.bgBot[si]);
   ctx.fillStyle=grad; ctx.fillRect(0,0,canvas.width,canvas.height);
- 
+
   ctx.save();
   if(W.env==='stars'){
     for(let i=0;i<90;i++){
@@ -882,10 +1149,10 @@ function draw(){
     }
   }
   ctx.globalAlpha=1; ctx.restore();
- 
+
   ctx.save();
   ctx.translate(-cameraX,0);
- 
+
   // Platforms
   for(const p of level.platforms){
     const grd=ctx.createLinearGradient(p.x,p.y,p.x,p.y+p.h);
@@ -900,7 +1167,7 @@ function draw(){
     if(p.type==='bounce'){ctx.font='13px sans-serif';ctx.textAlign='center';ctx.fillText('🟠',p.x+p.w/2,p.y+15);}
     if(p.type==='finish'){ctx.fillStyle='#000';ctx.font='bold 16px Fredoka One';ctx.textAlign='center';ctx.fillText('🏁 FINISH!',p.x+p.w/2,p.y+18);}
   }
- 
+
   // Spikes
   for(const t of level.traps){
     ctx.shadowColor=W.spikeG; ctx.shadowBlur=28;
@@ -928,7 +1195,22 @@ function draw(){
     ctx.stroke();
   }
   ctx.shadowBlur=0;
- 
+
+  // Fruits
+  for(const f of levelFruits){
+    if(f.collected) continue;
+    f.bob+=0.05;
+    const fy=f.y+Math.sin(f.bob)*5;
+    // Glow
+    ctx.shadowColor=f.fruit.color; ctx.shadowBlur=18;
+    ctx.font='26px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(f.fruit.emoji, f.x+f.w/2, fy+22);
+    ctx.shadowBlur=0;
+    // Speed label
+    ctx.font='bold 9px Nunito'; ctx.fillStyle='#fff';
+    ctx.fillText(f.fruit.effect==='speed'?'⚡SPEED':f.fruit.effect==='jump'?'⬆JUMP':'✨BOTH', f.x+f.w/2, fy+36);
+  }
+
   // Flags
   for(const cp of level.checkpoints){
     const hit=checkpoint&&checkpoint.stage>=cp.stage;
@@ -939,19 +1221,20 @@ function draw(){
     ctx.beginPath(); ctx.moveTo(cp.x+cp.w/2+2,cp.y+4); ctx.lineTo(cp.x+cp.w/2+22,cp.y+14); ctx.lineTo(cp.x+cp.w/2+2,cp.y+24); ctx.closePath(); ctx.fill();
     ctx.shadowBlur=0;
   }
- 
+
   // Boss
   drawBoss();
- 
-  // Trail
+
+  // Trail — color changes with active fruit boost
+  const trailColor = player.activeFruits.length>0 ? player.activeFruits[player.activeFruits.length-1].color : '#ff2d78';
   for(let i=0;i<player.trail.length;i++){
     const t=player.trail[i];
     ctx.globalAlpha=(i/player.trail.length)*.44;
-    ctx.fillStyle='#ff2d78';
+    ctx.fillStyle=trailColor;
     ctx.beginPath(); ctx.arc(t.x,t.y,(i/player.trail.length)*10,0,Math.PI*2); ctx.fill();
   }
   ctx.globalAlpha=1;
- 
+
   // Player
   const pw=player.w,ph=player.h*player.squish,py=player.y+player.h-ph,px=player.x;
   ctx.shadowColor='#ff2d78'; ctx.shadowBlur=18;
@@ -964,7 +1247,7 @@ function draw(){
   ctx.beginPath(); ctx.arc(px+pw-9,py+ph*.18,3.5,0,Math.PI*2); ctx.fill();
   ctx.fillStyle='rgba(255,255,255,.4)'; ctx.fillRect(px+pw-10,py+3,5,3);
   ctx.shadowBlur=0;
- 
+
   // Particles
   for(const p of particles){
     ctx.globalAlpha=p.life; ctx.fillStyle=p.color;
@@ -974,7 +1257,7 @@ function draw(){
   ctx.globalAlpha=1; ctx.shadowBlur=0;
   ctx.restore();
 }
- 
+
 // ═══════════════════════════════════
 //  HELPERS
 // ═══════════════════════════════════
@@ -990,7 +1273,7 @@ function shadeColor(hex,amt){
   const r=clamp((n>>16)+amt,0,255), g=clamp(((n>>8)&0xff)+amt,0,255), b=clamp((n&0xff)+amt,0,255);
   return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
 }
- 
+
 // ═══════════════════════════════════
 //  LOOP
 // ═══════════════════════════════════
@@ -998,12 +1281,18 @@ function loop(ts){
   const dt=Math.min((ts-lastTime)/1000,.05); lastTime=ts;
   if(gameRunning){update(dt);draw();requestAnimationFrame(loop);}
 }
- 
+
 window.addEventListener('resize',()=>{
   canvas.width=window.innerWidth; canvas.height=window.innerHeight-50;
 });
- 
-// Boot
+
+// Boot — load saved progress
+totalBlocks = parseInt(localStorage.getItem('obby_blocks')||'0');
+totalCoins  = parseInt(localStorage.getItem('obby_coins') ||'0');
+playerLevel = parseInt(localStorage.getItem('obby_level') ||'1');
+usedCodes   = JSON.parse(localStorage.getItem('obby_usedCodes')||'[]');
+document.getElementById('hud-blocks').textContent = totalBlocks;
+document.getElementById('hud-coins').textContent  = totalCoins;
 showMenu();
 </script>
 </body>
