@@ -114,7 +114,7 @@
 
 <!-- SHOP OVERLAY -->
 <div id="shop-overlay" style="display:none;position:fixed;inset:0;background:rgba(4,2,14,.96);z-index:500;
-  display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;">
+  flex-direction:column;align-items:center;justify-content:center;gap:14px;">
 </div>
 
 <script>
@@ -608,6 +608,7 @@ function winWorld(){
     localStorage.setItem('obby_blocks',totalBlocks);
     document.getElementById('hud-blocks').textContent=totalBlocks;
     earnCoins(5*currentWorld, 'world complete!');
+  }
 
   const W=WORLDS[currentWorld];
   const next=WORLDS[currentWorld+1];
